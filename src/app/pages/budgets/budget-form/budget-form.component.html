@@ -1,0 +1,295 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>{{ isEditMode ? 'Editar' : 'Nuevo' }} Presupuesto</ion-title>
+    <ion-buttons slot="start">
+      <ion-button (click)="confirmCancel()">
+        <ion-icon name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-buttons slot="end">
+      <ion-button (click)="saveBudget()" [disabled]="loading">
+        <ion-icon name="save-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="ion-padding">
+    <!-- Información General -->
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Información General</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-item>
+          <ion-label position="floating">Cliente *</ion-label>
+          <ion-select 
+            [value]="selectedClientId"
+            (ionChange)="onClientChangeEvent($event)"
+            interface="action-sheet"
+            placeholder="Selecciona un cliente">
+            <ion-select-option *ngFor="let client of clients" [value]="client.id">
+              {{ client.nombre }}
+            </ion-select-option>
+          </ion-select>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="floating">Vehículo *</ion-label>
+          <ion-select 
+            [value]="selectedVehicleId"
+            (ionChange)="onVehicleChangeEvent($event)"
+            interface="action-sheet"
+            [disabled]="!selectedClientId"
+            placeholder="Selecciona un vehículo">
+            <ion-select-option *ngFor="let vehicle of vehicles" [value]="vehicle.id">
+              {{ vehicle.marca }} {{ vehicle.modelo }} - {{ vehicle.placas }}
+            </ion-select-option>
+          </ion-select>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="floating">Descripción General</ion-label>
+          <ion-textarea 
+            [(ngModel)]="descripcion"
+            rows="3"
+            placeholder="Descripción del presupuesto...">
+          </ion-textarea>
+        </ion-item>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Agregar Nuevo Item -->
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Agregar Item</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-item>
+          <ion-label position="floating">Tipo *</ion-label>
+          <ion-select 
+            [(ngModel)]="newItem.tipo"
+            (ionChange)="onNewItemTypeChange()"
+            interface="action-sheet">
+            <ion-select-option value="mano_obra">
+              <ion-icon name="hammer-outline"></ion-icon>
+              Mano de Obra
+            </ion-select-option>
+            <ion-select-option value="producto">
+              <ion-icon name="cube-outline"></ion-icon>
+              Producto
+            </ion-select-option>
+          </ion-select>
+        </ion-item>
+
+        <!-- Si es producto, mostrar selector -->
+        <ion-item *ngIf="newItem.tipo === 'producto'">
+          <ion-label position="floating">Producto</ion-label>
+          <ion-select 
+            [(ngModel)]="newItem.productId"
+            (ionChange)="onProductSelect($event)"
+            interface="action-sheet"
+            placeholder="Selecciona un producto">
+            <ion-select-option *ngFor="let product of products" [value]="product.id">
+              {{ product.nombreProducto }} - ${{ product.precioVenta?.toFixed(2) }}
+            </ion-select-option>
+          </ion-select>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="floating">Descripción *</ion-label>
+          <ion-input 
+            [(ngModel)]="newItem.descripcion"
+            placeholder="Descripción del item">
+          </ion-input>
+        </ion-item>
+
+        <ion-grid>
+          <ion-row>
+            <ion-col size="4">
+              <ion-item>
+                <ion-label position="floating">Cantidad *</ion-label>
+                <ion-input 
+                  [(ngModel)]="newItem.cantidad"
+                  type="number"
+                  min="1"
+                  placeholder="1">
+                </ion-input>
+              </ion-item>
+            </ion-col>
+            <ion-col size="4">
+              <ion-item>
+                <ion-label position="floating">Precio Unit. *</ion-label>
+                <ion-input 
+                  [(ngModel)]="newItem.unitPrice"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00">
+                </ion-input>
+              </ion-item>
+            </ion-col>
+            <ion-col size="4">
+              <ion-item lines="none">
+                <ion-label position="stacked">Subtotal</ion-label>
+                <ion-text color="primary">
+                  <h3>${{ (newItem.cantidad * newItem.unitPrice).toFixed(2) }}</h3>
+                </ion-text>
+              </ion-item>
+            </ion-col>
+          </ion-row>
+        </ion-grid>
+
+        <ion-button expand="block" (click)="addItem()" color="success">
+          <ion-icon name="add-circle-outline" slot="start"></ion-icon>
+          Agregar Item
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Lista de Items -->
+    <ion-card *ngIf="items.length > 0">
+      <ion-card-header>
+        <ion-card-title>
+          Items del Presupuesto ({{ items.length }})
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content class="items-table-container">
+        <div class="items-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Tipo</th>
+                <th>Descripción</th>
+                <th>Cant.</th>
+                <th>Precio</th>
+                <th>Subtotal</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of items; let i = index">
+                <td>
+                  <ion-chip [color]="item.tipo === 'mano_obra' ? 'tertiary' : 'secondary'" class="tipo-chip">
+                    <ion-icon [name]="item.tipo === 'mano_obra' ? 'hammer-outline' : 'cube-outline'"></ion-icon>
+                    <ion-label>{{ item.tipo === 'mano_obra' ? 'M.O.' : 'Prod.' }}</ion-label>
+                  </ion-chip>
+                </td>
+                <td>{{ item.descripcion }}</td>
+                <td>
+                  <ion-input
+                    [(ngModel)]="item.cantidad"
+                    type="number"
+                    min="1"
+                    (ionChange)="onItemQuantityChange(item)"
+                    class="inline-input">
+                  </ion-input>
+                </td>
+                <td>
+                  <ion-input
+                    [(ngModel)]="item.unitPrice"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    (ionChange)="onItemPriceChange(item)"
+                    class="inline-input">
+                  </ion-input>
+                </td>
+                <td><strong>${{ getItemSubtotal(item).toFixed(2) }}</strong></td>
+                <td>
+                  <ion-button fill="clear" color="danger" size="small" (click)="removeItem(i)">
+                    <ion-icon name="trash-outline"></ion-icon>
+                  </ion-button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Cálculos y Totales -->
+    <ion-card *ngIf="items.length > 0">
+      <ion-card-header>
+        <ion-card-title>Cálculos</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-grid>
+          <ion-row>
+            <ion-col size="12" size-md="6">
+              <ion-item>
+                <ion-label position="floating">Tipo de Descuento</ion-label>
+                <ion-select 
+                  [(ngModel)]="descuentoTipo"
+                  (ionChange)="calculateTotals()"
+                  interface="action-sheet">
+                  <ion-select-option value="monto">Monto ($)</ion-select-option>
+                  <ion-select-option value="porcentaje">Porcentaje (%)</ion-select-option>
+                </ion-select>
+              </ion-item>
+            </ion-col>
+            <ion-col size="12" size-md="6">
+              <ion-item>
+                <ion-label position="floating">
+                  {{ descuentoTipo === 'monto' ? 'Descuento ($)' : 'Descuento (%)' }}
+                </ion-label>
+                <ion-input 
+                  [(ngModel)]="descuentoValor"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  (ionChange)="onDescuentoChange()"
+                  placeholder="0.00">
+                </ion-input>
+              </ion-item>
+            </ion-col>
+          </ion-row>
+        </ion-grid>
+
+        <div class="totals-summary">
+          <div class="total-line">
+            <span>Subtotal:</span>
+            <strong>${{ subtotal.toFixed(2) }}</strong>
+          </div>
+          <div class="total-line" *ngIf="descuento > 0">
+            <span>Descuento:</span>
+            <strong class="discount-amount">-${{ descuento.toFixed(2) }}</strong>
+          </div>
+          <div class="total-line">
+            <span>Base Imponible:</span>
+            <strong>${{ (subtotal - descuento).toFixed(2) }}</strong>
+          </div>
+          <div class="total-line">
+            <span>Impuesto (16%):</span>
+            <strong>${{ impuesto.toFixed(2) }}</strong>
+          </div>
+          <div class="total-line total-final">
+            <span>TOTAL:</span>
+            <strong>${{ total.toFixed(2) }}</strong>
+          </div>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Mensaje si no hay items -->
+    <ion-card *ngIf="items.length === 0" class="empty-items">
+      <ion-card-content class="ion-text-center">
+        <ion-icon name="list-outline" style="font-size: 48px; color: var(--ion-color-medium);"></ion-icon>
+        <p>No hay items agregados</p>
+        <ion-note>Agrega al menos un item para continuar</ion-note>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Botón Guardar (móvil) -->
+    <ion-button 
+      expand="block" 
+      (click)="saveBudget()" 
+      [disabled]="loading || items.length === 0"
+      size="large"
+      class="save-button">
+      <ion-icon name="save-outline" slot="start"></ion-icon>
+      {{ isEditMode ? 'Actualizar' : 'Guardar' }} Presupuesto
+    </ion-button>
+  </div>
+</ion-content>

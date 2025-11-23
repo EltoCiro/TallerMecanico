@@ -1,0 +1,51 @@
+<ion-tabs>
+  <ion-tab-bar slot="bottom">
+    <!-- Clientes - Todos los roles -->
+    <ion-tab-button tab="clients">
+      <ion-icon name="people-outline"></ion-icon>
+      <ion-label>Clientes</ion-label>
+    </ion-tab-button>
+
+    <!-- Presupuestos - Administrador y Cajero -->
+    <ion-tab-button tab="budgets" *ngIf="canAccessTab(['Administrador', 'Cajero'])">
+      <ion-icon name="document-text-outline"></ion-icon>
+      <ion-label>Presupuestos</ion-label>
+    </ion-tab-button>
+
+    <!-- Órdenes de Servicio - Todos -->
+    <ion-tab-button tab="service-orders">
+      <ion-icon name="clipboard-outline"></ion-icon>
+      <ion-label>Órdenes</ion-label>
+    </ion-tab-button>
+
+    <!-- Inventario - Administrador y Cajero -->
+    <ion-tab-button tab="inventory" *ngIf="canAccessTab(['Administrador', 'Cajero'])">
+      <ion-icon name="cube-outline"></ion-icon>
+      <ion-label>Inventario</ion-label>
+    </ion-tab-button>
+
+    <!-- Personal - Solo Administrador -->
+    <ion-tab-button tab="staff" *ngIf="canAccessTab(['Administrador'])">
+      <ion-icon name="person-outline"></ion-icon>
+      <ion-label>Personal</ion-label>
+    </ion-tab-button>
+
+    <!-- Ventas - Administrador y Cajero -->
+    <ion-tab-button tab="sales" *ngIf="canAccessTab(['Administrador', 'Cajero'])">
+      <ion-icon name="cart-outline"></ion-icon>
+      <ion-label>Ventas</ion-label>
+    </ion-tab-button>
+
+    <!-- Reportes - Administrador -->
+    <ion-tab-button tab="reports" *ngIf="canAccessTab(['Administrador'])">
+      <ion-icon name="stats-chart-outline"></ion-icon>
+      <ion-label>Reportes</ion-label>
+    </ion-tab-button>
+
+    <!-- Configuración - Todos -->
+    <ion-tab-button tab="settings">
+      <ion-icon name="settings-outline"></ion-icon>
+      <ion-label>Config</ion-label>
+    </ion-tab-button>
+  </ion-tab-bar>
+</ion-tabs>

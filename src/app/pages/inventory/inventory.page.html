@@ -1,0 +1,249 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button routerLink="/tabs/home">
+        <ion-icon name="home-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Inventario de Productos</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="viewMode = viewMode === 'cards' ? 'list' : 'cards'">
+        <ion-icon [name]="viewMode === 'cards' ? 'list-outline' : 'grid-outline'"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+  <ion-toolbar>
+    <ion-searchbar 
+      [(ngModel)]="searchTerm" 
+      (ionInput)="onSearchChange()" 
+      placeholder="Buscar por nombre, SKU o descripción..."
+      debounce="300">
+    </ion-searchbar>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-refresher slot="fixed" (ionRefresh)="loadProducts($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <!-- Estadísticas -->
+  <ion-card class="stats-card">
+    <ion-card-content>
+      <ion-grid>
+        <ion-row>
+          <ion-col size="6" size-md="3">
+            <div class="stat-item">
+              <ion-icon name="cube-outline" color="primary"></ion-icon>
+              <div class="stat-value">{{ totalProducts }}</div>
+              <div class="stat-label">Total Productos</div>
+            </div>
+          </ion-col>
+          <ion-col size="6" size-md="3">
+            <div class="stat-item">
+              <ion-icon name="warning-outline" color="warning"></ion-icon>
+              <div class="stat-value">{{ lowStockCount }}</div>
+              <div class="stat-label">Stock Bajo</div>
+            </div>
+          </ion-col>
+          <ion-col size="6" size-md="3">
+            <div class="stat-item">
+              <ion-icon name="cash-outline" color="success"></ion-icon>
+              <div class="stat-value">${{ totalInventoryValue.toFixed(0) }}</div>
+              <div class="stat-label">Valor Inventario</div>
+            </div>
+          </ion-col>
+          <ion-col size="6" size-md="3">
+            <div class="stat-item">
+              <ion-icon name="trending-up-outline" color="tertiary"></ion-icon>
+              <div class="stat-value">${{ totalSaleValue.toFixed(0) }}</div>
+              <div class="stat-label">Valor Venta</div>
+            </div>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Filtros -->
+  <div class="ion-padding-horizontal">
+    <ion-segment [(ngModel)]="filterType" (ionChange)="onFilterChange()" mode="md">
+      <ion-segment-button value="all">
+        <ion-label>Todos ({{ products.length }})</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="low">
+        <ion-label>
+          <ion-icon name="warning-outline"></ion-icon>
+          Bajo ({{ lowStockCount }})
+        </ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="empty">
+        <ion-label>
+          <ion-icon name="alert-circle-outline"></ion-icon>
+          Sin Stock ({{ emptyStockCount }})
+        </ion-label>
+      </ion-segment-button>
+    </ion-segment>
+  </div>
+
+  <!-- Loading Skeleton -->
+  <div *ngIf="loading" class="ion-padding">
+    <ion-card *ngFor="let i of [1,2,3]">
+      <ion-card-content>
+        <ion-skeleton-text [animated]="true" style="width: 60%"></ion-skeleton-text>
+        <ion-skeleton-text [animated]="true" style="width: 40%"></ion-skeleton-text>
+        <ion-skeleton-text [animated]="true" style="width: 80%"></ion-skeleton-text>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && filteredProducts.length === 0" class="empty-state ion-padding">
+    <ion-card>
+      <ion-card-content class="ion-text-center">
+        <ion-icon name="cube-outline" size="large" color="medium"></ion-icon>
+        <h2>No hay productos</h2>
+        <p *ngIf="searchTerm">No se encontraron productos con "{{ searchTerm }}"</p>
+        <p *ngIf="!searchTerm && filterType === 'all'">Agrega tu primer producto al inventario</p>
+        <p *ngIf="filterType === 'low'">No hay productos con stock bajo</p>
+        <p *ngIf="filterType === 'empty'">No hay productos sin stock</p>
+        <ion-button *ngIf="canEdit && !searchTerm" (click)="openProductForm()">
+          <ion-icon name="add-outline" slot="start"></ion-icon>
+          Agregar Producto
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <!-- Vista de Tarjetas -->
+  <div *ngIf="!loading && viewMode === 'cards' && filteredProducts.length > 0" class="ion-padding">
+    <ion-card *ngFor="let product of filteredProducts" class="product-card" button (click)="viewProductDetails(product)">
+      <ion-card-header>
+        <div class="card-header-content">
+          <div>
+            <ion-card-title>{{ product.nombreProducto }}</ion-card-title>
+            <ion-card-subtitle>SKU: {{ product.sku || 'N/A' }}</ion-card-subtitle>
+          </div>
+          <div class="badges">
+            <ion-badge *ngIf="isEmptyStock(product)" color="danger">
+              <ion-icon name="alert-circle-outline"></ion-icon>
+              Sin Stock
+            </ion-badge>
+            <ion-badge *ngIf="isLowStock(product)" color="warning">
+              <ion-icon name="warning-outline"></ion-icon>
+              Stock Bajo
+            </ion-badge>
+          </div>
+        </div>
+      </ion-card-header>
+      <ion-card-content>
+        <p class="description">{{ product.descripcion || 'Sin descripción' }}</p>
+        
+        <div class="price-section">
+          <div class="price-item">
+            <span class="label">Costo:</span>
+            <span class="value">${{ (product.precioCosto || 0).toFixed(2) }}</span>
+          </div>
+          <div class="price-item">
+            <span class="label">Venta:</span>
+            <span class="value price-sale">${{ (product.precioVenta || 0).toFixed(2) }}</span>
+          </div>
+          <div class="price-item">
+            <span class="label">Margen:</span>
+            <span class="value" [ngClass]="calculateMargin(product) >= 0 ? 'margin-positive' : 'margin-negative'">
+              {{ calculateMargin(product).toFixed(1) }}%
+            </span>
+          </div>
+        </div>
+
+        <div class="stock-section">
+          <div class="stock-info">
+            <div>
+              <span class="stock-label">Stock:</span>
+              <span class="stock-value" [style.color]="getStockStatus(product).color">
+                {{ product.cantidad || 0 }}
+              </span>
+            </div>
+            <div class="stock-min">
+              Mín: {{ product.minStockAlert || 0 }}
+            </div>
+          </div>
+          <ion-progress-bar 
+            [value]="getStockPercentage(product) / 100" 
+            [color]="getProgressColor(product)">
+          </ion-progress-bar>
+        </div>
+
+        <div class="action-buttons" (click)="$event.stopPropagation()">
+          <ion-button 
+            *ngIf="canManageInventory" 
+            size="small" 
+            fill="outline" 
+            (click)="openInventoryMovement(product)">
+            <ion-icon name="swap-vertical-outline" slot="start"></ion-icon>
+            Movimiento
+          </ion-button>
+          <ion-button 
+            *ngIf="canEdit" 
+            size="small" 
+            fill="outline" 
+            (click)="openProductForm(product)">
+            <ion-icon name="create-outline" slot="start"></ion-icon>
+            Editar
+          </ion-button>
+          <ion-button 
+            *ngIf="canDelete" 
+            size="small" 
+            fill="outline" 
+            color="danger" 
+            (click)="deleteProduct(product)">
+            <ion-icon name="trash-outline" slot="start"></ion-icon>
+            Eliminar
+          </ion-button>
+        </div>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <!-- Vista de Lista -->
+  <ion-list *ngIf="!loading && viewMode === 'list' && filteredProducts.length > 0">
+    <ion-item *ngFor="let product of filteredProducts" button (click)="viewProductDetails(product)">
+      <ion-icon 
+        name="cube-outline" 
+        slot="start" 
+        [color]="isEmptyStock(product) ? 'danger' : (isLowStock(product) ? 'warning' : 'primary')">
+      </ion-icon>
+      <ion-label>
+        <h2>
+          {{ product.nombreProducto }}
+          <ion-chip *ngIf="isEmptyStock(product)" color="danger" style="margin-left: 8px;">
+            <ion-icon name="alert-circle-outline"></ion-icon>
+            <ion-label>Sin Stock</ion-label>
+          </ion-chip>
+          <ion-chip *ngIf="isLowStock(product)" color="warning" style="margin-left: 8px;">
+            <ion-icon name="warning-outline"></ion-icon>
+            <ion-label>Bajo</ion-label>
+          </ion-chip>
+        </h2>
+        <p>{{ product.descripcion || 'Sin descripción' }}</p>
+        <p>
+          <strong>${{ (product.precioVenta || 0).toFixed(2) }}</strong> | 
+          Stock: <span [style.color]="getStockStatus(product).color">{{ product.cantidad || 0 }}</span> | 
+          SKU: {{ product.sku || 'N/A' }}
+        </p>
+      </ion-label>
+      <ion-badge 
+        slot="end" 
+        [color]="getProgressColor(product)">
+        {{ product.cantidad || 0 }}
+      </ion-badge>
+      <ion-icon name="chevron-forward-outline" slot="end"></ion-icon>
+    </ion-item>
+  </ion-list>
+
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab-button (click)="openProductForm()">
+      <ion-icon name="add-outline"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+</ion-content>

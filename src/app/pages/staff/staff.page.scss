@@ -1,0 +1,383 @@
+// ==================== GENERAL ====================
+ion-content {
+  --background: #f5f5f5;
+}
+
+.ion-padding {
+  padding: 12px !important;
+}
+
+// ==================== CARDS ====================
+.form-card,
+.staff-card,
+.user-card {
+  margin: 8px 0;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+}
+
+.form-card {
+  ion-card-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--ion-color-primary);
+
+    ion-icon {
+      font-size: 1.4rem;
+    }
+  }
+
+  ion-item {
+    --padding-start: 0;
+    margin-bottom: 16px;
+    --background: transparent;
+
+    ion-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 8px;
+      font-weight: 500;
+
+      ion-icon {
+        font-size: 1rem;
+      }
+    }
+  }
+
+  ion-grid {
+    margin-top: 20px;
+  }
+}
+
+.empty-state {
+  margin-top: 40px;
+  text-align: center;
+
+  ion-card-content {
+    padding: 40px 20px;
+
+    ion-icon {
+      margin-bottom: 16px;
+      font-size: 4rem;
+      opacity: 0.5;
+    }
+
+    h2 {
+      margin: 12px 0 8px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--ion-color-medium);
+    }
+
+    p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--ion-color-medium);
+      opacity: 0.8;
+    }
+  }
+}
+
+// ==================== STAFF CARD ====================
+.staff-card {
+  ion-card-content {
+    padding: 16px;
+  }
+
+  .avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--ion-color-primary), var(--ion-color-primary-shade));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 12px;
+
+    ion-icon {
+      font-size: 28px;
+      color: white;
+    }
+  }
+
+  .staff-name {
+    margin: 0 0 8px 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--ion-color-dark);
+  }
+
+  .staff-info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 8px;
+
+    ion-chip {
+      margin: 0;
+      height: 28px;
+      font-size: 0.85rem;
+
+      ion-icon {
+        font-size: 16px;
+        margin-right: 4px;
+      }
+    }
+
+    .specialty-chip {
+      font-weight: 600;
+    }
+  }
+
+  .productivity-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+
+    ion-chip {
+      margin: 0;
+      height: 26px;
+      font-size: 0.8rem;
+
+      ion-icon {
+        font-size: 14px;
+        margin-right: 4px;
+      }
+    }
+  }
+
+  .action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: flex-end;
+
+    ion-button {
+      margin: 0;
+      --padding-start: 8px;
+      --padding-end: 8px;
+
+      ion-icon {
+        font-size: 1.2rem;
+      }
+    }
+  }
+}
+
+// ==================== USER CARD ====================
+.user-card {
+  ion-card-content {
+    padding: 16px;
+  }
+
+  .avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 12px;
+    background: linear-gradient(135deg, var(--ion-color-medium), var(--ion-color-medium-shade));
+
+    &.admin {
+      background: linear-gradient(135deg, var(--ion-color-danger), var(--ion-color-danger-shade));
+    }
+
+    &.mechanic {
+      background: linear-gradient(135deg, var(--ion-color-primary), var(--ion-color-primary-shade));
+    }
+
+    &.cashier {
+      background: linear-gradient(135deg, var(--ion-color-success), var(--ion-color-success-shade));
+    }
+
+    ion-icon {
+      font-size: 28px;
+      color: white;
+    }
+  }
+
+  .user-name {
+    margin: 0 0 8px 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--ion-color-dark);
+  }
+
+  .user-info {
+    margin-bottom: 8px;
+
+    .user-email {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin: 0 0 8px 0;
+      font-size: 0.9rem;
+      color: var(--ion-color-medium);
+
+      ion-icon {
+        font-size: 16px;
+      }
+    }
+
+    .role-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 12px;
+      font-weight: 600;
+      font-size: 0.85rem;
+
+      ion-icon {
+        font-size: 14px;
+      }
+    }
+  }
+
+  .user-id {
+    margin-top: 4px;
+
+    ion-chip {
+      margin: 0;
+      height: 24px;
+      font-size: 0.75rem;
+    }
+  }
+
+  .action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: flex-end;
+
+    ion-button {
+      margin: 0;
+      --padding-start: 8px;
+      --padding-end: 8px;
+
+      ion-icon {
+        font-size: 1.2rem;
+      }
+    }
+  }
+}
+
+// ==================== INFO MESSAGE ====================
+.info-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  margin: 16px 0;
+  background-color: rgba(var(--ion-color-primary-rgb), 0.1);
+  border-radius: 8px;
+  border-left: 4px solid var(--ion-color-primary);
+
+  ion-icon {
+    font-size: 1.2rem;
+    color: var(--ion-color-primary);
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--ion-color-dark);
+    line-height: 1.4;
+  }
+}
+
+// ==================== SEGMENT ====================
+ion-segment {
+  margin: 8px;
+
+  ion-segment-button {
+    --indicator-height: 3px;
+    min-height: 48px;
+
+    ion-icon {
+      font-size: 1.2rem;
+      margin-bottom: 4px;
+    }
+
+    ion-label {
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+  }
+}
+
+// ==================== SEARCHBAR ====================
+ion-searchbar {
+  --background: rgba(255, 255, 255, 0.9);
+  --border-radius: 12px;
+  padding: 8px 16px;
+}
+
+// ==================== FAB ====================
+ion-fab-button {
+  --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  
+  &:hover {
+    --box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+  }
+}
+
+// ==================== RESPONSIVE ====================
+@media (min-width: 768px) {
+  .form-card,
+  .staff-card,
+  .user-card {
+    margin: 12px auto;
+    max-width: 800px;
+  }
+
+  .empty-state {
+    max-width: 600px;
+    margin: 60px auto;
+  }
+}
+
+// ==================== ANIMATIONS ====================
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.staff-card,
+.user-card {
+  animation: fadeIn 0.3s ease-out;
+}
+
+// ==================== ACCESSIBILITY ====================
+ion-button {
+  &:focus {
+    outline: 2px solid var(--ion-color-primary);
+    outline-offset: 2px;
+  }
+}
+
+ion-chip {
+  &:focus {
+    outline: 1px solid var(--ion-color-primary);
+  }
+}

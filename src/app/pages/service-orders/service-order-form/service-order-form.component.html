@@ -1,0 +1,393 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>
+      <span *ngIf="viewMode">Ver</span>
+      <span *ngIf="!viewMode">{{ order ? 'Editar' : 'Nueva' }}</span>
+      Orden de Servicio
+    </ion-title>
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()">
+        <ion-icon name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-buttons slot="end" *ngIf="!viewMode">
+      <ion-button (click)="save()" [strong]="true">
+        <ion-icon name="save-outline" slot="start"></ion-icon>
+        Guardar
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <!-- Información General -->
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>
+        <ion-icon name="documents-outline"></ion-icon>
+        Información General
+      </ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <!-- Crear desde presupuesto -->
+      <ion-item *ngIf="!order && !isCreatingFromBudget && !viewMode">
+        <ion-label position="floating">
+          <ion-icon name="cash-outline"></ion-icon>
+          Crear desde Presupuesto Aprobado (Opcional)
+        </ion-label>
+        <ion-select 
+          interface="action-sheet" 
+          placeholder="Seleccionar presupuesto"
+          (ionChange)="onBudgetChange($event)">
+          <ion-select-option *ngFor="let budget of approvedBudgets" [value]="budget.id">
+            #{{ budget.id }} - {{ budget.Cliente?.nombre || 'Sin cliente' }} - {{ formatCurrency(budget.total || 0) }}
+          </ion-select-option>
+        </ion-select>
+      </ion-item>
+
+      <!-- Cliente -->
+      <ion-item>
+        <ion-label position="floating">
+          <ion-icon name="person-outline"></ion-icon>
+          Cliente *
+        </ion-label>
+        <ion-select 
+          [value]="formData.ClienteId"
+          interface="action-sheet"
+          [disabled]="viewMode || isCreatingFromBudget"
+          (ionChange)="onClientChangeEvent($event)"
+          placeholder="Seleccionar cliente">
+          <ion-select-option *ngFor="let client of clients" [value]="client.id">
+            {{ client.nombre }}
+          </ion-select-option>
+        </ion-select>
+      </ion-item>
+
+      <!-- Vehículo -->
+      <ion-item>
+        <ion-label position="floating">
+          <ion-icon name="car-outline"></ion-icon>
+          Vehículo *
+        </ion-label>
+        <ion-select 
+          [value]="formData.VehiculoId"
+          interface="action-sheet"
+          [disabled]="viewMode || isCreatingFromBudget || !formData.ClienteId"
+          (ionChange)="onVehicleChangeEvent($event)"
+          placeholder="Seleccionar vehículo">
+          <ion-select-option *ngFor="let vehicle of vehiclesByClient" [value]="vehicle.id">
+            {{ vehicle.marca }} {{ vehicle.modelo }} - {{ vehicle.placas }}
+          </ion-select-option>
+        </ion-select>
+      </ion-item>
+      <ion-note *ngIf="!formData.ClienteId" class="ion-padding-start">
+        Primero seleccione un cliente
+      </ion-note>
+
+      <!-- Descripción -->
+      <ion-item>
+        <ion-label position="floating">Descripción del Servicio *</ion-label>
+        <ion-textarea 
+          [(ngModel)]="formData.descripcion"
+          [disabled]="viewMode"
+          rows="3"
+          placeholder="Describe el trabajo a realizar...">
+        </ion-textarea>
+      </ion-item>
+
+      <!-- Mecánicos Asignados -->
+      <ion-item>
+        <ion-label position="floating">
+          <ion-icon name="construct-outline"></ion-icon>
+          Mecánicos Asignados *
+        </ion-label>
+        <ion-select 
+          [(ngModel)]="formData.assignedMechanicIds" 
+          interface="action-sheet" 
+          multiple="true"
+          [disabled]="viewMode"
+          placeholder="Seleccionar mecánicos">
+          <ion-select-option *ngFor="let mechanic of mechanics" [value]="mechanic.id">
+            {{ mechanic.nombre }}
+          </ion-select-option>
+        </ion-select>
+      </ion-item>
+
+      <!-- Chips de mecánicos seleccionados -->
+      <div class="mechanics-chips" *ngIf="formData.assignedMechanicIds && formData.assignedMechanicIds.length > 0">
+        <ion-chip 
+          *ngFor="let mechanicId of formData.assignedMechanicIds" 
+          color="tertiary">
+          <ion-icon name="person-outline"></ion-icon>
+          <ion-label>{{ getMechanicName(mechanicId) }}</ion-label>
+        </ion-chip>
+      </div>
+
+      <!-- Estatus -->
+      <ion-item *ngIf="order">
+        <ion-label position="floating">Estado</ion-label>
+        <ion-select 
+          [(ngModel)]="formData.estatus" 
+          interface="action-sheet"
+          [disabled]="viewMode">
+          <ion-select-option value="pendiente">Pendiente</ion-select-option>
+          <ion-select-option value="en_proceso">En Proceso</ion-select-option>
+          <ion-select-option value="completada">Completada</ion-select-option>
+        </ion-select>
+      </ion-item>
+
+      <!-- Notas -->
+      <ion-item>
+        <ion-label position="floating">Notas / Observaciones</ion-label>
+        <ion-textarea 
+          [(ngModel)]="formData.notas"
+          [disabled]="viewMode"
+          rows="3"
+          placeholder="Observaciones adicionales...">
+        </ion-textarea>
+      </ion-item>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Gestión de Actividades -->
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>
+        <ion-icon name="checkmark-circle-outline"></ion-icon>
+        Actividades y Registro de Tiempos
+      </ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <!-- Formulario para agregar actividad -->
+      <div class="add-activity-form" *ngIf="!viewMode">
+        <h3>Agregar Nueva Actividad</h3>
+        
+        <ion-item>
+          <ion-label position="floating">Descripción *</ion-label>
+          <ion-input 
+            [(ngModel)]="newActivity.descripcion" 
+            type="text"
+            placeholder="Ej: Cambio de aceite y filtro">
+          </ion-input>
+        </ion-item>
+        
+        <div class="form-row">
+          <ion-item class="form-col">
+            <ion-label position="floating">Cantidad *</ion-label>
+            <ion-input 
+              [(ngModel)]="newActivity.cantidad" 
+              type="number" 
+              min="1"
+              (ionChange)="calculateTotals()">
+            </ion-input>
+          </ion-item>
+          
+          <ion-item class="form-col">
+            <ion-label position="floating">Precio Unit. ($) *</ion-label>
+            <ion-input 
+              [(ngModel)]="newActivity.precioUnitario" 
+              type="number" 
+              min="0" 
+              step="0.01"
+              (ionChange)="calculateTotals()">
+            </ion-input>
+          </ion-item>
+        </div>
+
+        <div class="form-row">
+          <ion-item class="form-col">
+            <ion-label position="floating">Horas Estimadas</ion-label>
+            <ion-input 
+              [(ngModel)]="newActivity.horasEstimadas" 
+              type="number" 
+              min="0" 
+              step="0.5">
+            </ion-input>
+          </ion-item>
+          
+          <ion-item class="form-col">
+            <ion-label position="floating">Mecánico</ion-label>
+            <ion-select 
+              [(ngModel)]="newActivity.mecanicoId" 
+              interface="popover"
+              placeholder="Asignar">
+              <ion-select-option [value]="undefined">Sin asignar</ion-select-option>
+              <ion-select-option *ngFor="let mechanic of mechanics" [value]="mechanic.id">
+                {{ mechanic.nombre }}
+              </ion-select-option>
+            </ion-select>
+          </ion-item>
+        </div>
+
+        <ion-button expand="block" (click)="addActivity()" color="secondary" class="add-btn">
+          <ion-icon name="add-outline" slot="start"></ion-icon>
+          Agregar Actividad
+        </ion-button>
+      </div>
+
+      <!-- Lista de actividades -->
+      <div class="activities-list" *ngIf="formData.actividades && formData.actividades.length > 0">
+        <h3>Actividades Registradas</h3>
+        
+        <ion-card *ngFor="let activity of formData.actividades; let i = index" class="activity-card">
+          <ion-card-header>
+            <div class="activity-header">
+              <ion-card-title class="activity-title">
+                {{ activity.descripcion }}
+              </ion-card-title>
+              <ion-chip [color]="getActivityStatusColor(activity.estatus)" class="status-chip">
+                <ion-label>{{ getActivityStatusLabel(activity.estatus) }}</ion-label>
+              </ion-chip>
+            </div>
+          </ion-card-header>
+
+          <ion-card-content>
+            <!-- Información de la actividad -->
+            <div class="activity-info">
+              <div class="info-item">
+                <ion-label color="medium">Cantidad:</ion-label>
+                <ion-label>{{ activity.cantidad }}</ion-label>
+              </div>
+              <div class="info-item">
+                <ion-label color="medium">Precio Unit.:</ion-label>
+                <ion-label>{{ formatCurrency(activity.precioUnitario) }}</ion-label>
+              </div>
+              <div class="info-item">
+                <ion-label color="medium">Subtotal:</ion-label>
+                <ion-label><strong>{{ formatCurrency(activity.cantidad * activity.precioUnitario) }}</strong></ion-label>
+              </div>
+            </div>
+
+            <!-- Mecánico asignado -->
+            <div class="mechanic-assigned" *ngIf="activity.mecanicoId">
+              <ion-chip color="tertiary">
+                <ion-icon name="person-outline"></ion-icon>
+                <ion-label>{{ getMechanicName(activity.mecanicoId) }}</ion-label>
+              </ion-chip>
+            </div>
+
+            <!-- Registro de tiempos -->
+            <div class="time-tracking">
+              <div class="time-row">
+                <ion-label color="medium">
+                  <ion-icon name="time-outline"></ion-icon>
+                  Horas Estimadas:
+                </ion-label>
+                <ion-badge color="primary">{{ activity.horasEstimadas || 0 }}h</ion-badge>
+              </div>
+              <div class="time-row" *ngIf="activity.horasReales">
+                <ion-label color="medium">
+                  <ion-icon name="time-outline"></ion-icon>
+                  Horas Reales:
+                </ion-label>
+                <ion-badge [color]="activity.horasReales > (activity.horasEstimadas || 0) ? 'warning' : 'success'">
+                  {{ activity.horasReales }}h
+                </ion-badge>
+              </div>
+              <div class="time-row" *ngIf="activity.fechaInicio">
+                <ion-label color="medium">Inicio:</ion-label>
+                <ion-label>{{ formatDate(activity.fechaInicio) }}</ion-label>
+              </div>
+              <div class="time-row" *ngIf="activity.fechaFin">
+                <ion-label color="medium">Fin:</ion-label>
+                <ion-label>{{ formatDate(activity.fechaFin) }}</ion-label>
+              </div>
+              <div class="time-row" *ngIf="activity.fechaInicio && activity.fechaFin">
+                <ion-label color="medium">Duración:</ion-label>
+                <ion-label><strong>{{ calculateDuration(activity.fechaInicio, activity.fechaFin) }}</strong></ion-label>
+              </div>
+            </div>
+
+            <!-- Botones de acción -->
+            <div class="activity-actions" *ngIf="!viewMode">
+              <ion-button 
+                *ngIf="activity.estatus === 'pendiente'" 
+                size="small" 
+                color="success"
+                (click)="startActivity(activity)">
+                <ion-icon name="play-outline" slot="start"></ion-icon>
+                Iniciar
+              </ion-button>
+
+              <ion-button 
+                *ngIf="activity.estatus === 'en_proceso'" 
+                size="small" 
+                color="warning"
+                (click)="completeActivity(activity)">
+                <ion-icon name="checkmark-circle-outline" slot="start"></ion-icon>
+                Completar
+              </ion-button>
+
+              <ion-button 
+                size="small" 
+                color="danger"
+                fill="outline"
+                (click)="removeActivity(i)">
+                <ion-icon name="trash-outline" slot="start"></ion-icon>
+                Eliminar
+              </ion-button>
+            </div>
+          </ion-card-content>
+        </ion-card>
+      </div>
+
+      <!-- Mensaje si no hay actividades -->
+      <div *ngIf="!formData.actividades || formData.actividades.length === 0" class="empty-activities">
+        <ion-icon name="construct-outline" size="large"></ion-icon>
+        <p>No hay actividades agregadas</p>
+      </div>
+
+      <!-- Totales -->
+      <ion-card class="totals-card" *ngIf="formData.actividades && formData.actividades.length > 0">
+        <ion-card-content>
+          <div class="total-row">
+            <ion-label>Subtotal:</ion-label>
+            <ion-label>{{ formatCurrency(formData.subtotal || 0) }}</ion-label>
+          </div>
+          <div class="total-row">
+            <ion-label>IVA (16%):</ion-label>
+            <ion-label>{{ formatCurrency(formData.impuesto || 0) }}</ion-label>
+          </div>
+          <div class="total-row total-final">
+            <ion-label><strong>Total:</strong></ion-label>
+            <ion-label color="primary"><h2>{{ formatCurrency(formData.total || 0) }}</h2></ion-label>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Resumen final (solo en modo visualización) -->
+  <ion-card *ngIf="viewMode && order">
+    <ion-card-header>
+      <ion-card-title>
+        <ion-icon name="eye-outline"></ion-icon>
+        Resumen
+      </ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <div class="summary-item">
+        <ion-label color="medium">Cliente:</ion-label>
+        <ion-label>{{ getClientName(formData.ClienteId) }}</ion-label>
+      </div>
+      <div class="summary-item">
+        <ion-label color="medium">Vehículo:</ion-label>
+        <ion-label>{{ getVehicleInfo(formData.VehiculoId) }}</ion-label>
+      </div>
+      <div class="summary-item">
+        <ion-label color="medium">Estado:</ion-label>
+        <ion-chip [color]="getActivityStatusColor(formData.estatus)">
+          <ion-label>{{ getActivityStatusLabel(formData.estatus) }}</ion-label>
+        </ion-chip>
+      </div>
+      <div class="summary-item" *ngIf="formData.createdAt">
+        <ion-label color="medium">Creada:</ion-label>
+        <ion-label>{{ formatDate(formData.createdAt) }}</ion-label>
+      </div>
+      <div class="summary-item" *ngIf="formData.updatedAt">
+        <ion-label color="medium">Actualizada:</ion-label>
+        <ion-label>{{ formatDate(formData.updatedAt) }}</ion-label>
+      </div>
+    </ion-card-content>
+  </ion-card>
+</ion-content>

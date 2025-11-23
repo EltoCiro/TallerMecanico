@@ -1,0 +1,136 @@
+ion-card {
+  margin-bottom: 16px;
+
+  ion-card-header {
+    ion-card-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 18px;
+
+      ion-icon {
+        font-size: 24px;
+        color: var(--ion-color-primary);
+      }
+    }
+  }
+
+  ion-card-content {
+    padding-top: 16px;
+  }
+}
+
+ion-item {
+  --padding-start: 0;
+  margin-bottom: 16px;
+
+  ion-label {
+    margin-bottom: 8px;
+  }
+}
+
+ion-note {
+  display: block;
+  margin-bottom: 12px;
+  font-size: 12px;
+  line-height: 1.4;
+
+  ion-icon {
+    vertical-align: middle;
+    margin-right: 4px;
+  }
+}
+
+// Margen de ganancia
+.margin-info {
+  margin-top: 16px;
+  padding: 12px;
+  background: var(--ion-color-light);
+  border-radius: 8px;
+
+  ion-item {
+    --background: transparent;
+    margin-bottom: 0;
+
+    h3 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    ion-badge {
+      font-size: 16px;
+      padding: 6px 12px;
+      font-weight: bold;
+    }
+  }
+
+  ion-note {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 8px;
+    padding: 8px;
+    background: var(--ion-color-danger-tint);
+    border-radius: 4px;
+    
+    ion-icon {
+      font-size: 16px;
+    }
+  }
+}
+
+// Resumen
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--ion-color-light);
+
+  &:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  span {
+    font-size: 14px;
+    color: var(--ion-color-medium);
+  }
+
+  strong {
+    font-size: 16px;
+    color: var(--ion-color-dark);
+
+    &.success {
+      color: var(--ion-color-success);
+    }
+
+    &.danger {
+      color: var(--ion-color-danger);
+    }
+  }
+}
+
+// Botón principal
+ion-button[expand="block"] {
+  --padding-top: 16px;
+  --padding-bottom: 16px;
+  font-weight: 600;
+  font-size: 16px;
+
+  ion-icon {
+    font-size: 20px;
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  ion-card-title {
+    font-size: 16px !important;
+
+    ion-icon {
+      font-size: 20px !important;
+    }
+  }
+}

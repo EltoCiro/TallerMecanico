@@ -1,0 +1,132 @@
+<ion-content class="login-content">
+  <!-- Background Decorativo -->
+  <div class="background-decoration">
+    <div class="circle circle-1"></div>
+    <div class="circle circle-2"></div>
+    <div class="circle circle-3"></div>
+  </div>
+
+  <!-- Contenedor Principal -->
+  <div class="login-container">
+    <!-- Logo y Título -->
+    <div class="login-header animate-fade-in">
+      <div class="logo-wrapper">
+        <ion-icon name="car-sport" class="logo-icon"></ion-icon>
+      </div>
+      <h1 class="app-title">Taller Mecánico</h1>
+      <p class="app-subtitle">Sistema de Gestión Integral</p>
+    </div>
+
+    <!-- Card de Login -->
+    <div class="login-card modern-card animate-fade-in">
+      <!-- Botón de configuración -->
+      <ion-button 
+        class="config-btn" 
+        fill="clear" 
+        size="small"
+        (click)="toggleConfig()">
+        <ion-icon name="settings-outline" slot="icon-only"></ion-icon>
+      </ion-button>
+
+      <div class="card-header">
+        <h2 class="card-title">Iniciar Sesión</h2>
+        <p class="card-subtitle">Ingresa tus credenciales para continuar</p>
+      </div>
+
+      <div class="form-content">
+        <!-- Input Usuario -->
+        <div class="input-group">
+          <div class="input-icon">
+            <ion-icon name="person-outline"></ion-icon>
+          </div>
+          <div class="input-wrapper">
+            <label class="input-label">Email</label>
+            <input 
+              type="email" 
+              class="modern-input"
+              [(ngModel)]="email"
+              [disabled]="loading"
+              placeholder="admin@taller.com">
+          </div>
+        </div>
+
+        <!-- Input Password -->
+        <div class="input-group">
+          <div class="input-icon">
+            <ion-icon name="lock-closed-outline"></ion-icon>
+          </div>
+          <div class="input-wrapper">
+            <label class="input-label">Contraseña</label>
+            <input 
+              type="password" 
+              class="modern-input"
+              [(ngModel)]="password"
+              [disabled]="loading"
+              (keyup.enter)="login()"
+              placeholder="••••••••">
+          </div>
+        </div>
+
+        <!-- Botón Login -->
+        <ion-button 
+          expand="block" 
+          class="btn-gradient login-btn"
+          (click)="login()"
+          [disabled]="loading">
+          <ion-icon name="log-in-outline" slot="start" *ngIf="!loading"></ion-icon>
+          <span *ngIf="!loading">Ingresar al Sistema</span>
+          <ion-spinner *ngIf="loading" name="crescent"></ion-spinner>
+        </ion-button>
+
+        <!-- Panel de Configuración -->
+        <div *ngIf="showConfig" class="config-panel animate-fade-in">
+          <div class="config-header">
+            <ion-icon name="server-outline"></ion-icon>
+            <h3>Configuración del Servidor</h3>
+          </div>
+          
+          <div class="input-group">
+            <div class="input-icon">
+              <ion-icon name="link-outline"></ion-icon>
+            </div>
+            <div class="input-wrapper">
+              <label class="input-label">URL de la API</label>
+              <input 
+                type="text" 
+                class="modern-input"
+                [(ngModel)]="apiUrl"
+                placeholder="http://localhost:3000">
+            </div>
+          </div>
+
+          <ion-button 
+            expand="block" 
+            fill="outline"
+            class="btn-outline"
+            (click)="saveApiUrl()">
+            <ion-icon name="save-outline" slot="start"></ion-icon>
+            Guardar Configuración
+          </ion-button>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="card-footer">
+        <p class="version-text">
+          <ion-icon name="shield-checkmark-outline"></ion-icon>
+          Sistema de Control v1.0
+        </p>
+      </div>
+    </div>
+
+    <!-- Credenciales de prueba (solo desarrollo) -->
+    <div class="dev-credentials animate-fade-in">
+      <ion-text color="medium">
+        <p class="text-sm">
+          <ion-icon name="information-circle-outline"></ion-icon>
+          <strong>Credenciales de prueba:</strong> admin / 123456
+        </p>
+      </ion-text>
+    </div>
+  </div>
+</ion-content>

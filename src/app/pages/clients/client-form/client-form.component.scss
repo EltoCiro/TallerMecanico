@@ -1,0 +1,14 @@
+.vehicle-item {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--ion-color-light);
+  margin-bottom: 16px;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+ion-item {
+  --padding-start: 0;
+  margin-bottom: 8px;
+}

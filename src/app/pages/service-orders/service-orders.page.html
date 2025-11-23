@@ -1,0 +1,216 @@
+<ion-header [translucent]="true">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button routerLink="/tabs/home">
+        <ion-icon name="home-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Órdenes de Servicio</ion-title>
+  </ion-toolbar>
+  
+  <!-- Barra de búsqueda -->
+  <ion-toolbar>
+    <ion-searchbar 
+      [(ngModel)]="searchTerm" 
+      (ionInput)="onSearchChange()"
+      placeholder="Buscar por cliente, vehículo, mecánico..."
+      animated>
+    </ion-searchbar>
+  </ion-toolbar>
+
+  <!-- Segmento de filtros por estatus -->
+  <ion-toolbar>
+    <ion-segment [(ngModel)]="selectedStatus" (ionChange)="onStatusChange($event)" scrollable>
+      <ion-segment-button value="todas">
+        <ion-label>Todas</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="pendiente">
+        <ion-label>Pendientes</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="en_proceso">
+        <ion-label>En Proceso</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="completada">
+        <ion-label>Completadas</ion-label>
+      </ion-segment-button>
+    </ion-segment>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <!-- Refresher -->
+  <ion-refresher slot="fixed" (ionRefresh)="loadOrders($event)">
+    <ion-refresher-content pullingIcon="chevron-down-outline"></ion-refresher-content>
+  </ion-refresher>
+
+  <!-- Skeleton loading -->
+  <div *ngIf="isLoading" class="skeleton-container">
+    <ion-card *ngFor="let i of [1,2,3]">
+      <ion-card-header>
+        <ion-skeleton-text [animated]="true" style="width: 60%"></ion-skeleton-text>
+        <ion-skeleton-text [animated]="true" style="width: 40%"></ion-skeleton-text>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-skeleton-text [animated]="true" style="width: 80%"></ion-skeleton-text>
+        <ion-skeleton-text [animated]="true" style="width: 70%"></ion-skeleton-text>
+        <ion-skeleton-text [animated]="true" style="width: 90%"></ion-skeleton-text>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <!-- Listado de órdenes -->
+  <div *ngIf="!isLoading">
+    <!-- Mensaje si no hay órdenes -->
+    <div *ngIf="filteredOrders.length === 0" class="empty-state">
+      <ion-icon name="clipboard-outline" size="large"></ion-icon>
+      <h2>No hay órdenes</h2>
+      <p *ngIf="selectedStatus !== 'todas'">No hay órdenes con el estado seleccionado</p>
+      <p *ngIf="searchTerm">No se encontraron resultados para "{{ searchTerm }}"</p>
+      <ion-button *ngIf="canEdit()" (click)="openOrderForm()">
+        <ion-icon name="add-outline" slot="start"></ion-icon>
+        Nueva Orden
+      </ion-button>
+    </div>
+
+    <!-- Cards de órdenes -->
+    <ion-list *ngIf="filteredOrders.length > 0">
+      <ion-item-sliding *ngFor="let order of filteredOrders">
+        <ion-item button (click)="viewOrderDetails(order)" detail="false">
+          <ion-card class="order-card">
+            <ion-card-header>
+              <div class="card-header-top">
+                <ion-card-subtitle>
+                  <ion-icon name="documents-outline"></ion-icon>
+                  Orden #{{ order.id }}
+                </ion-card-subtitle>
+                <ion-chip [color]="getStatusColor(order.estatus)" class="status-chip">
+                  <ion-icon [name]="getStatusIcon(order.estatus)"></ion-icon>
+                  <ion-label>{{ getStatusLabel(order.estatus) }}</ion-label>
+                </ion-chip>
+              </div>
+              <ion-card-title class="order-title">
+                {{ order.descripcion || 'Sin descripción' }}
+              </ion-card-title>
+            </ion-card-header>
+
+            <ion-card-content>
+              <!-- Cliente y Vehículo -->
+              <div class="info-row">
+                <ion-icon name="person-outline" color="primary"></ion-icon>
+                <ion-label>{{ getClientName(order.ClienteId) }}</ion-label>
+              </div>
+              <div class="info-row">
+                <ion-icon name="car-outline" color="primary"></ion-icon>
+                <ion-label>{{ getVehicleInfo(order.VehiculoId) }}</ion-label>
+              </div>
+
+              <!-- Mecánicos asignados -->
+              <div class="info-row mechanics-row">
+                <ion-icon name="construct-outline" color="primary"></ion-icon>
+                <div class="mechanics-chips">
+                  <ion-chip 
+                    *ngFor="let mechanic of order.Mechanics" 
+                    color="tertiary" 
+                    class="mechanic-chip">
+                    <ion-label>{{ mechanic.nombre }}</ion-label>
+                  </ion-chip>
+                  <ion-chip *ngIf="!order.Mechanics || order.Mechanics.length === 0" color="medium">
+                    <ion-label>Sin asignar</ion-label>
+                  </ion-chip>
+                </div>
+              </div>
+
+              <!-- Progreso de actividades -->
+              <div class="progress-section" *ngIf="order.actividades && order.actividades.length > 0">
+                <div class="progress-header">
+                  <ion-label>
+                    <ion-icon name="checkmark-circle-outline"></ion-icon>
+                    Actividades: {{ getActivitiesStats(order) }}
+                  </ion-label>
+                  <ion-label class="hours-label">
+                    <ion-icon name="time-outline"></ion-icon>
+                    {{ getTotalHours(order) }}h
+                  </ion-label>
+                </div>
+                <ion-progress-bar 
+                  [value]="getActivitiesProgress(order)" 
+                  [color]="getStatusColor(order.estatus)">
+                </ion-progress-bar>
+              </div>
+
+              <!-- Totales -->
+              <div class="totals-section" *ngIf="order.total">
+                <div class="total-row">
+                  <ion-label>Subtotal:</ion-label>
+                  <ion-label>{{ formatCurrency(order.subtotal) }}</ion-label>
+                </div>
+                <div class="total-row">
+                  <ion-label>Impuesto:</ion-label>
+                  <ion-label>{{ formatCurrency(order.impuesto) }}</ion-label>
+                </div>
+                <div class="total-row total-final">
+                  <ion-label><strong>Total:</strong></ion-label>
+                  <ion-label><strong>{{ formatCurrency(order.total) }}</strong></ion-label>
+                </div>
+              </div>
+
+              <!-- Fechas -->
+              <div class="dates-section">
+                <ion-note>
+                  <ion-icon name="calendar-outline"></ion-icon>
+                  Creada: {{ formatDate(order.createdAt) }}
+                </ion-note>
+                <ion-note *ngIf="order.updatedAt && order.updatedAt !== order.createdAt">
+                  <ion-icon name="calendar-outline"></ion-icon>
+                  Actualizada: {{ formatDate(order.updatedAt) }}
+                </ion-note>
+              </div>
+
+              <!-- Botones de acción -->
+              <div class="action-buttons">
+                <ion-button 
+                  *ngIf="canChangeStatus()" 
+                  size="small" 
+                  fill="outline"
+                  (click)="changeOrderStatus(order, $event)">
+                  <ion-icon name="swap-horizontal-outline" slot="start"></ion-icon>
+                  Cambiar Estado
+                </ion-button>
+                <ion-button 
+                  *ngIf="canEdit()" 
+                  size="small" 
+                  color="primary"
+                  (click)="openOrderForm(order); $event.stopPropagation()">
+                  <ion-icon name="create-outline" slot="start"></ion-icon>
+                  Editar
+                </ion-button>
+              </div>
+            </ion-card-content>
+          </ion-card>
+        </ion-item>
+
+        <!-- Opciones deslizables -->
+        <ion-item-options side="end" *ngIf="canEdit()">
+          <ion-item-option 
+            color="primary" 
+            (click)="openOrderForm(order)">
+            <ion-icon name="create-outline" slot="icon-only"></ion-icon>
+          </ion-item-option>
+          <ion-item-option 
+            *ngIf="canDelete()" 
+            color="danger" 
+            (click)="deleteOrder(order, $event)">
+            <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+          </ion-item-option>
+        </ion-item-options>
+      </ion-item-sliding>
+    </ion-list>
+  </div>
+
+  <!-- FAB para nueva orden -->
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed" *ngIf="canEdit()">
+    <ion-fab-button (click)="openOrderForm()">
+      <ion-icon name="add-outline"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+</ion-content>

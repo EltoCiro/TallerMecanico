@@ -1,0 +1,151 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button routerLink="/tabs/home">
+        <ion-icon name="home-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Presupuestos</ion-title>
+  </ion-toolbar>
+  <ion-toolbar>
+    <ion-searchbar 
+      [(ngModel)]="searchTerm"
+      (ionInput)="onSearchChange()"
+      placeholder="Buscar por cliente, vehículo o descripción...">
+    </ion-searchbar>
+  </ion-toolbar>
+  <ion-toolbar>
+    <ion-segment [(ngModel)]="statusFilter" (ionChange)="onStatusFilterChange()" value="todos">
+      <ion-segment-button value="todos">
+        <ion-label>Todos</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="pendiente">
+        <ion-label>Pendientes</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="aprobado">
+        <ion-label>Aprobados</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="rechazado">
+        <ion-label>Rechazados</ion-label>
+      </ion-segment-button>
+    </ion-segment>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-refresher slot="fixed" (ionRefresh)="loadBudgets($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <!-- Loading Skeleton -->
+  <div *ngIf="loading" class="ion-padding">
+    <ion-card *ngFor="let item of [1,2,3]">
+      <ion-card-header>
+        <ion-skeleton-text [animated]="true" style="width: 60%"></ion-skeleton-text>
+        <ion-skeleton-text [animated]="true" style="width: 40%"></ion-skeleton-text>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-skeleton-text [animated]="true" style="width: 100%"></ion-skeleton-text>
+        <ion-skeleton-text [animated]="true" style="width: 80%"></ion-skeleton-text>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && filteredBudgets.length === 0" class="ion-padding">
+    <ion-card>
+      <ion-card-content class="ion-text-center">
+        <ion-icon name="document-text-outline" style="font-size: 64px; color: var(--ion-color-medium);"></ion-icon>
+        <h2>No hay presupuestos</h2>
+        <p *ngIf="searchTerm || statusFilter !== 'todos'">
+          No se encontraron presupuestos con los filtros aplicados
+        </p>
+        <p *ngIf="!searchTerm && statusFilter === 'todos'">
+          No hay presupuestos registrados
+        </p>
+        <ion-button *ngIf="canEdit" (click)="openBudgetForm()" fill="outline">
+          <ion-icon name="add-outline" slot="start"></ion-icon>
+          Crear Presupuesto
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <!-- Budget Cards -->
+  <div *ngIf="!loading && filteredBudgets.length > 0" class="ion-padding">
+    <ion-card *ngFor="let budget of filteredBudgets" class="budget-card">
+      <ion-card-header>
+        <div class="card-header-content">
+          <div>
+            <ion-card-subtitle>
+              <ion-icon name="document-text-outline"></ion-icon>
+              Presupuesto #{{ budget.id }}
+            </ion-card-subtitle>
+            <ion-card-title>{{ budget.Cliente?.nombre || 'Cliente sin asignar' }}</ion-card-title>
+          </div>
+          <ion-chip [color]="getStatusColor(budget.estado)">
+            <ion-icon [name]="getStatusIcon(budget.estado)"></ion-icon>
+            <ion-label>{{ getStatusLabel(budget.estado) }}</ion-label>
+          </ion-chip>
+        </div>
+      </ion-card-header>
+
+      <ion-card-content>
+        <div class="budget-info">
+          <div class="info-row">
+            <ion-icon name="car-outline"></ion-icon>
+            <span>
+              {{ budget.Vehiculo ? (budget.Vehiculo.marca + ' ' + budget.Vehiculo.modelo + ' (' + budget.Vehiculo.placas + ')') : 'Vehículo sin asignar' }}
+            </span>
+          </div>
+          
+          <div class="info-row" *ngIf="budget.descripcion">
+            <ion-icon name="information-circle-outline"></ion-icon>
+            <span>{{ budget.descripcion }}</span>
+          </div>
+
+          <div class="info-row">
+            <ion-icon name="list-outline"></ion-icon>
+            <span>{{ budget.items?.length || 0 }} item(s)</span>
+          </div>
+
+          <div class="totals-section">
+            <div class="total-row">
+              <span>Subtotal:</span>
+              <strong>${{ budget.subtotal?.toFixed(2) || '0.00' }}</strong>
+            </div>
+            <div class="total-row">
+              <span>Impuesto:</span>
+              <strong>${{ budget.impuesto?.toFixed(2) || '0.00' }}</strong>
+            </div>
+            <div class="total-row" *ngIf="budget.descuento && budget.descuento > 0">
+              <span>Descuento:</span>
+              <strong class="discount">-${{ budget.descuento?.toFixed(2) }}</strong>
+            </div>
+            <div class="total-row total-final">
+              <span>TOTAL:</span>
+              <strong>${{ budget.total?.toFixed(2) || '0.00' }}</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="action-buttons">
+          <ion-button fill="clear" size="small" (click)="viewBudgetDetails(budget)">
+            <ion-icon name="eye-outline" slot="start"></ion-icon>
+            Ver Detalles
+          </ion-button>
+          <ion-button fill="clear" size="small" (click)="showBudgetActions(budget, $event)">
+            <ion-icon name="ellipsis-vertical-outline"></ion-icon>
+          </ion-button>
+        </div>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <!-- FAB Button -->
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed" *ngIf="canEdit">
+    <ion-fab-button (click)="openBudgetForm()">
+      <ion-icon name="add-outline"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+</ion-content>

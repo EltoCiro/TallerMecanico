@@ -1,0 +1,91 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>{{ client ? 'Editar' : 'Nuevo' }} Cliente</ion-title>
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()">
+        <ion-icon name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-buttons slot="end">
+      <ion-button (click)="save()">
+        <ion-icon name="save-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Información del Cliente</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-item>
+        <ion-label position="floating">Nombre *</ion-label>
+        <ion-input [(ngModel)]="formData.nombre" type="text"></ion-input>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="floating">Teléfono</ion-label>
+        <ion-input [(ngModel)]="formData.telefono" type="tel"></ion-input>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="floating">Correo</ion-label>
+        <ion-input [(ngModel)]="formData.correo" type="email"></ion-input>
+      </ion-item>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Vehículos</ion-card-title>
+      <ion-button expand="block" (click)="addVehicle()">
+        <ion-icon name="add-circle-outline" slot="start"></ion-icon>
+        Agregar Vehículo
+      </ion-button>
+    </ion-card-header>
+    <ion-card-content>
+      <div *ngFor="let vehicle of vehicles; let i = index" class="vehicle-item">
+        <ion-text color="medium">
+          <h4>Vehículo {{ i + 1 }}</h4>
+        </ion-text>
+        
+        <ion-item>
+          <ion-label position="floating">Marca</ion-label>
+          <ion-input [(ngModel)]="vehicle.marca" type="text"></ion-input>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="floating">Modelo</ion-label>
+          <ion-input [(ngModel)]="vehicle.modelo" type="text"></ion-input>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="floating">Año</ion-label>
+          <ion-input [(ngModel)]="vehicle.anio" type="number"></ion-input>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="floating">Placas</ion-label>
+          <ion-input [(ngModel)]="vehicle.placas" type="text"></ion-input>
+        </ion-item>
+
+        <ion-button 
+          expand="block" 
+          color="danger" 
+          fill="outline"
+          (click)="removeVehicle(i)">
+          <ion-icon name="trash-outline" slot="start"></ion-icon>
+          Eliminar Vehículo
+        </ion-button>
+      </div>
+
+      <div *ngIf="vehicles.length === 0" class="ion-text-center">
+        <ion-text color="medium">
+          <p>No hay vehículos registrados</p>
+        </ion-text>
+      </div>
+    </ion-card-content>
+  </ion-card>
+</ion-content>

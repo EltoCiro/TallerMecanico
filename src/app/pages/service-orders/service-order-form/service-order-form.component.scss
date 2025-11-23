@@ -1,0 +1,353 @@
+// Cards generales
+ion-card {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  margin-bottom: 16px;
+
+  ion-card-header {
+    ion-card-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.2rem;
+      font-weight: 600;
+
+      ion-icon {
+        font-size: 1.4rem;
+        color: var(--ion-color-primary);
+      }
+    }
+  }
+
+  ion-card-content {
+    padding-top: 16px;
+  }
+}
+
+// Items del formulario
+ion-item {
+  --padding-start: 0;
+  margin-bottom: 16px;
+
+  ion-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    ion-icon {
+      font-size: 1.1rem;
+      color: var(--ion-color-primary);
+    }
+  }
+}
+
+ion-note {
+  font-size: 0.85rem;
+  margin-top: 4px;
+}
+
+// Chips de mecánicos
+.mechanics-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 0;
+
+  ion-chip {
+    margin: 0;
+    font-size: 0.9rem;
+
+    ion-icon {
+      margin-right: 4px;
+    }
+  }
+}
+
+// Formulario de agregar actividad
+.add-activity-form {
+  padding: 16px;
+  background: var(--ion-color-light);
+  border-radius: 12px;
+  margin-bottom: 20px;
+
+  h3 {
+    margin: 0 0 16px 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--ion-color-dark);
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+
+    .form-col {
+      margin-bottom: 0;
+    }
+  }
+
+  .add-btn {
+    margin-top: 16px;
+    text-transform: none;
+    font-weight: 600;
+  }
+}
+
+// Lista de actividades
+.activities-list {
+  h3 {
+    margin: 20px 0 12px 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--ion-color-dark);
+  }
+}
+
+.activity-card {
+  background: var(--ion-color-light);
+  margin-bottom: 12px;
+
+  .activity-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+
+    .activity-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--ion-color-dark);
+      margin: 0;
+      flex: 1;
+    }
+
+    .status-chip {
+      margin: 0;
+      height: 28px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+  }
+
+  ion-card-content {
+    padding: 12px 16px 16px;
+  }
+
+  .activity-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--ion-color-medium-tint);
+
+    .info-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+
+      ion-label {
+        font-size: 0.9rem;
+
+        &[color="medium"] {
+          font-size: 0.8rem;
+        }
+      }
+    }
+  }
+
+  .mechanic-assigned {
+    margin-bottom: 12px;
+
+    ion-chip {
+      margin: 0;
+      font-size: 0.9rem;
+
+      ion-icon {
+        margin-right: 4px;
+      }
+    }
+  }
+
+  .time-tracking {
+    background: white;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+
+    .time-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      ion-label {
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+
+        &[color="medium"] {
+          font-size: 0.85rem;
+        }
+
+        ion-icon {
+          font-size: 1rem;
+        }
+      }
+
+      ion-badge {
+        font-size: 0.9rem;
+        padding: 4px 12px;
+      }
+    }
+  }
+
+  .activity-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+
+    ion-button {
+      flex: 1;
+      min-width: 120px;
+      text-transform: none;
+      font-weight: 600;
+      font-size: 0.9rem;
+
+      ion-icon {
+        margin-right: 4px;
+      }
+    }
+  }
+}
+
+// Estado vacío
+.empty-activities {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+
+  ion-icon {
+    font-size: 64px;
+    color: var(--ion-color-medium);
+    margin-bottom: 16px;
+  }
+
+  p {
+    color: var(--ion-color-medium);
+    font-size: 1rem;
+  }
+}
+
+// Totales
+.totals-card {
+  background: var(--ion-color-primary-tint);
+  border: 2px solid var(--ion-color-primary);
+
+  ion-card-content {
+    padding: 16px;
+  }
+
+  .total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+
+    ion-label {
+      font-size: 1rem;
+      color: var(--ion-color-dark);
+    }
+
+    &.total-final {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 2px solid var(--ion-color-primary);
+
+      ion-label {
+        font-size: 1.2rem;
+        font-weight: 700;
+
+        h2 {
+          margin: 0;
+          font-size: 1.5rem;
+          font-weight: 700;
+        }
+      }
+    }
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+}
+
+// Resumen (modo visualización)
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--ion-color-light);
+
+  &:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  ion-label {
+    font-size: 0.95rem;
+
+    &[color="medium"] {
+      font-size: 0.9rem;
+    }
+  }
+
+  ion-chip {
+    margin: 0;
+  }
+}
+
+// Responsive
+@media (min-width: 768px) {
+  .add-activity-form {
+    padding: 20px;
+
+    .form-row {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .activity-card {
+    .activity-info {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .activity-actions {
+      ion-button {
+        min-width: 140px;
+      }
+    }
+  }
+}
+
+// Estilos adicionales para modal
+:host {
+  .fullscreen-modal {
+    --width: 100%;
+    --height: 100%;
+  }
+}

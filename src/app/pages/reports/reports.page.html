@@ -1,0 +1,337 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button routerLink="/tabs/home">
+        <ion-icon name="home-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Reportes y Estadísticas</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="loadStats()">
+        <ion-icon name="refresh-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-refresher slot="fixed" (ionRefresh)="loadStats($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <!-- Filtros de Fecha -->
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>
+        <ion-icon name="calendar-outline"></ion-icon>
+        Filtros
+      </ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-grid>
+        <ion-row>
+          <ion-col size="12" size-md="6">
+            <ion-item>
+              <ion-label position="stacked">Desde</ion-label>
+              <ion-input type="date" [(ngModel)]="dateFrom"></ion-input>
+            </ion-item>
+          </ion-col>
+          <ion-col size="12" size-md="6">
+            <ion-item>
+              <ion-label position="stacked">Hasta</ion-label>
+              <ion-input type="date" [(ngModel)]="dateTo"></ion-input>
+            </ion-item>
+          </ion-col>
+        </ion-row>
+        <ion-row>
+          <ion-col>
+            <ion-button expand="block" (click)="applyDateFilter()">
+              <ion-icon name="filter-outline" slot="start"></ion-icon>
+              Aplicar Filtro
+            </ion-button>
+          </ion-col>
+          <ion-col>
+            <ion-button expand="block" fill="outline" (click)="clearDateFilter()">
+              <ion-icon name="close-outline" slot="start"></ion-icon>
+              Limpiar
+            </ion-button>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Estadísticas Generales -->
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>
+        <ion-icon name="stats-chart-outline"></ion-icon>
+        Estadísticas Generales
+      </ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-grid>
+        <ion-row>
+          <ion-col size="6" size-md="3">
+            <div class="stat-box">
+              <ion-icon name="people-outline" color="primary"></ion-icon>
+              <ion-text color="primary">
+                <h1>{{ stats.totalClients }}</h1>
+              </ion-text>
+              <p>Clientes</p>
+            </div>
+          </ion-col>
+          <ion-col size="6" size-md="3">
+            <div class="stat-box">
+              <ion-icon name="document-text-outline" color="tertiary"></ion-icon>
+              <ion-text color="tertiary">
+                <h1>{{ stats.totalBudgets }}</h1>
+              </ion-text>
+              <p>Presupuestos</p>
+            </div>
+          </ion-col>
+          <ion-col size="6" size-md="3">
+            <div class="stat-box">
+              <ion-icon name="construct-outline" color="warning"></ion-icon>
+              <ion-text color="warning">
+                <h1>{{ stats.totalOrders }}</h1>
+              </ion-text>
+              <p>Órdenes de Servicio</p>
+            </div>
+          </ion-col>
+          <ion-col size="6" size-md="3">
+            <div class="stat-box">
+              <ion-icon name="cube-outline" color="medium"></ion-icon>
+              <ion-text color="medium">
+                <h1>{{ stats.totalProducts }}</h1>
+              </ion-text>
+              <p>Productos</p>
+            </div>
+          </ion-col>
+        </ion-row>
+        <ion-row>
+          <ion-col size="6" size-md="4">
+            <div class="stat-box">
+              <ion-icon name="cart-outline" color="success"></ion-icon>
+              <ion-text color="success">
+                <h1>{{ stats.totalSales }}</h1>
+              </ion-text>
+              <p>Ventas Realizadas</p>
+            </div>
+          </ion-col>
+          <ion-col size="6" size-md="4">
+            <div class="stat-box">
+              <ion-icon name="cash-outline" color="success"></ion-icon>
+              <ion-text color="success">
+                <h1>${{ stats.totalRevenue.toFixed(0) }}</h1>
+              </ion-text>
+              <p>Ingresos Totales</p>
+            </div>
+          </ion-col>
+          <ion-col size="12" size-md="4">
+            <div class="stat-box">
+              <ion-icon name="trending-up-outline" color="success"></ion-icon>
+              <ion-text color="success">
+                <h1>${{ (stats.totalRevenue / (stats.totalSales || 1)).toFixed(0) }}</h1>
+              </ion-text>
+              <p>Ticket Promedio</p>
+            </div>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Top Productos Más Vendidos -->
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>
+        <ion-icon name="trophy-outline"></ion-icon>
+        Top 10 Productos Más Vendidos
+      </ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-list *ngIf="topProducts.length > 0">
+        <ion-item *ngFor="let product of topProducts; let i = index">
+          <ion-badge slot="start" [color]="i < 3 ? 'success' : 'medium'">
+            #{{ i + 1 }}
+          </ion-badge>
+          <ion-label>
+            <h2>{{ product.nombreProducto }}</h2>
+            <p>SKU: {{ product.sku }}</p>
+          </ion-label>
+          <ion-note slot="end">
+            <strong>{{ product.cantidad || 0 }}</strong> unidades
+          </ion-note>
+        </ion-item>
+      </ion-list>
+      <ion-text *ngIf="topProducts.length === 0" class="ion-text-center">
+        <p>No hay datos de ventas disponibles</p>
+      </ion-text>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Clientes con Más Servicios -->
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>
+        <ion-icon name="star-outline"></ion-icon>
+        Clientes Frecuentes
+      </ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-list *ngIf="topClients.length > 0">
+        <ion-item *ngFor="let client of topClients; let i = index">
+          <ion-badge slot="start" [color]="i < 3 ? 'tertiary' : 'medium'">
+            #{{ i + 1 }}
+          </ion-badge>
+          <ion-label>
+            <h2>{{ client.nombre }}</h2>
+            <p>{{ client.telefono || 'Sin teléfono' }} • {{ client.correo || 'Sin correo' }}</p>
+          </ion-label>
+          <ion-note slot="end">
+            <strong>{{ getClientServices(client) }}</strong> servicios
+          </ion-note>
+        </ion-item>
+      </ion-list>
+      <ion-text *ngIf="topClients.length === 0" class="ion-text-center">
+        <p>No hay datos de clientes disponibles</p>
+      </ion-text>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Estado de Presupuestos -->
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>
+        <ion-icon name="pie-chart-outline"></ion-icon>
+        Estado de Presupuestos
+      </ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-grid>
+        <ion-row>
+          <ion-col size="4">
+            <div class="stat-box-small">
+              <ion-icon name="time-outline" color="warning"></ion-icon>
+              <h2>{{ budgetStats.pendientes }}</h2>
+              <p>Pendientes</p>
+            </div>
+          </ion-col>
+          <ion-col size="4">
+            <div class="stat-box-small">
+              <ion-icon name="checkmark-circle-outline" color="success"></ion-icon>
+              <h2>{{ budgetStats.aprobados }}</h2>
+              <p>Aprobados</p>
+            </div>
+          </ion-col>
+          <ion-col size="4">
+            <div class="stat-box-small">
+              <ion-icon name="close-circle-outline" color="danger"></ion-icon>
+              <h2>{{ budgetStats.rechazados }}</h2>
+              <p>Rechazados</p>
+            </div>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Estado de Órdenes de Servicio -->
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>
+        <ion-icon name="settings-outline"></ion-icon>
+        Estado de Órdenes de Servicio
+      </ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-grid>
+        <ion-row>
+          <ion-col size="3">
+            <div class="stat-box-small">
+              <ion-icon name="hourglass-outline" color="medium"></ion-icon>
+              <h2>{{ orderStats.pendientes }}</h2>
+              <p>Pendientes</p>
+            </div>
+          </ion-col>
+          <ion-col size="3">
+            <div class="stat-box-small">
+              <ion-icon name="construct-outline" color="warning"></ion-icon>
+              <h2>{{ orderStats.enProceso }}</h2>
+              <p>En Proceso</p>
+            </div>
+          </ion-col>
+          <ion-col size="3">
+            <div class="stat-box-small">
+              <ion-icon name="pause-circle-outline" color="tertiary"></ion-icon>
+              <h2>{{ orderStats.suspendidas }}</h2>
+              <p>Suspendidas</p>
+            </div>
+          </ion-col>
+          <ion-col size="3">
+            <div class="stat-box-small">
+              <ion-icon name="checkmark-done-outline" color="success"></ion-icon>
+              <h2>{{ orderStats.completadas }}</h2>
+              <p>Completadas</p>
+            </div>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Productos con Stock Bajo -->
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>
+        <ion-icon name="alert-circle-outline" color="danger"></ion-icon>
+        Alertas de Inventario
+      </ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-list *ngIf="lowStockProducts.length > 0">
+        <ion-item *ngFor="let product of lowStockProducts" [color]="product.cantidad === 0 ? 'danger' : 'warning'" class="ion-margin-bottom">
+          <ion-icon 
+            [name]="product.cantidad === 0 ? 'alert-circle' : 'warning'" 
+            slot="start">
+          </ion-icon>
+          <ion-label>
+            <h2>{{ product.nombreProducto }}</h2>
+            <p>SKU: {{ product.sku }}</p>
+          </ion-label>
+          <ion-badge slot="end" [color]="product.cantidad === 0 ? 'danger' : 'warning'">
+            {{ product.cantidad || 0 }} unidades
+          </ion-badge>
+        </ion-item>
+      </ion-list>
+      <ion-text *ngIf="lowStockProducts.length === 0" color="success" class="ion-text-center">
+        <p><ion-icon name="checkmark-circle-outline"></ion-icon> Todo el inventario está en niveles óptimos</p>
+      </ion-text>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Exportar Reportes -->
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>
+        <ion-icon name="download-outline"></ion-icon>
+        Exportar Reportes
+      </ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-button expand="block" (click)="exportToPDF()">
+        <ion-icon name="document-outline" slot="start"></ion-icon>
+        Exportar a PDF
+      </ion-button>
+      <ion-button expand="block" color="success" (click)="exportToExcel()">
+        <ion-icon name="grid-outline" slot="start"></ion-icon>
+        Exportar a Excel
+      </ion-button>
+      <ion-button expand="block" color="tertiary" (click)="printReport()">
+        <ion-icon name="print-outline" slot="start"></ion-icon>
+        Imprimir Reporte
+      </ion-button>
+    </ion-card-content>
+  </ion-card>
+</ion-content>

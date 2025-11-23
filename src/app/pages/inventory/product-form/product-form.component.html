@@ -1,0 +1,147 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>{{ isEdit ? 'Editar' : 'Nuevo' }} Producto</ion-title>
+    <ion-buttons slot="start">
+      <ion-button (click)="dismiss()">
+        <ion-icon name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-buttons slot="end">
+      <ion-button (click)="save()" [strong]="true">
+        <ion-icon name="save-outline" slot="start"></ion-icon>
+        Guardar
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <!-- Información del Producto -->
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>
+        <ion-icon name="information-circle-outline"></ion-icon>
+        Información del Producto
+      </ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-item>
+        <ion-label position="floating">Nombre del Producto *</ion-label>
+        <ion-input 
+          [(ngModel)]="formData.nombre" 
+          type="text"
+          placeholder="Ej: Aceite de Motor 10W-40"
+          required>
+        </ion-input>
+      </ion-item>
+      <ion-note color="medium" class="ion-padding-start">Campo obligatorio</ion-note>
+
+      <ion-item>
+        <ion-label position="floating">SKU (Código)</ion-label>
+        <ion-input 
+          [(ngModel)]="formData.sku" 
+          type="text"
+          placeholder="Ej: ACE-10W40-001">
+        </ion-input>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="floating">Descripción</ion-label>
+        <ion-textarea 
+          [(ngModel)]="formData.descripcion" 
+          rows="3"
+          placeholder="Descripción detallada del producto...">
+        </ion-textarea>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="floating">Precio de Costo ($) *</ion-label>
+        <ion-input 
+          [(ngModel)]="formData.precioCosto" 
+          type="number"
+          step="0.01"
+          min="0"
+          placeholder="0.00">
+        </ion-input>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="floating">Precio de Venta ($) *</ion-label>
+        <ion-input 
+          [(ngModel)]="formData.precioVenta" 
+          type="number"
+          step="0.01"
+          min="0"
+          placeholder="0.00">
+        </ion-input>
+      </ion-item>
+
+      <!-- Margen -->
+      <div *ngIf="formData.precioCosto && formData.precioVenta" class="ion-padding">
+        <ion-badge 
+          [color]="calculateMargin() >= 0 ? 'success' : 'danger'">
+          Margen: {{ calculateMargin().toFixed(2) }}%
+        </ion-badge>
+        <ion-note 
+          *ngIf="calculateMargin() < 0" 
+          color="danger" 
+          class="ion-padding-start">
+          <ion-icon name="warning-outline"></ion-icon>
+          ⚠️ Vendiendo por debajo del costo
+        </ion-note>
+      </div>
+
+      <ion-item>
+        <ion-label position="floating">Cantidad en Stock *</ion-label>
+        <ion-input 
+          [(ngModel)]="formData.cantidad" 
+          type="number"
+          min="0"
+          placeholder="0">
+        </ion-input>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="floating">Alerta de Stock Mínimo</ion-label>
+        <ion-input 
+          [(ngModel)]="formData.minStockAlert" 
+          type="number"
+          min="0"
+          placeholder="5">
+        </ion-input>
+      </ion-item>
+      <ion-note color="medium" class="ion-padding-start">
+        Te avisaremos cuando el stock llegue a este nivel
+      </ion-note>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Resumen -->
+  <ion-card *ngIf="formData.precioCosto && formData.precioVenta && formData.cantidad">
+    <ion-card-header>
+      <ion-card-title>Resumen</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <div class="summary-item">
+        <span>Valor del Inventario (costo):</span>
+        <strong>${{ ((formData.cantidad || 0) * (formData.precioCosto || 0)).toFixed(2) }}</strong>
+      </div>
+      <div class="summary-item">
+        <span>Valor de Venta Potencial:</span>
+        <strong class="success">${{ ((formData.cantidad || 0) * (formData.precioVenta || 0)).toFixed(2) }}</strong>
+      </div>
+      <div class="summary-item">
+        <span>Ganancia Potencial:</span>
+        <strong [class]="calculateMargin() >= 0 ? 'success' : 'danger'">
+          ${{ (((formData.cantidad || 0) * (formData.precioVenta || 0)) - ((formData.cantidad || 0) * (formData.precioCosto || 0))).toFixed(2) }}
+        </strong>
+      </div>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Botón Guardar (móvil) -->
+  <ion-button expand="block" (click)="save()" class="ion-margin-top" size="large">
+    <ion-icon name="save-outline" slot="start"></ion-icon>
+    {{ isEdit ? 'Actualizar' : 'Guardar' }} Producto
+  </ion-button>
+</ion-content>

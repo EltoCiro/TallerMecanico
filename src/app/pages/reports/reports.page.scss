@@ -1,0 +1,114 @@
+.stat-box {
+  text-align: center;
+  padding: 20px;
+  background: linear-gradient(135deg, var(--ion-color-light) 0%, var(--ion-color-light-shade) 100%);
+  border-radius: 12px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  ion-icon {
+    font-size: 32px;
+    margin-bottom: 8px;
+  }
+
+  h1 {
+    margin: 8px 0;
+    font-size: 36px;
+    font-weight: bold;
+  }
+
+  p {
+    margin: 4px 0 0 0;
+    color: var(--ion-color-medium);
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+}
+
+.stat-box-small {
+  text-align: center;
+  padding: 16px;
+  background-color: var(--ion-color-light);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  transition: transform 0.2s ease;
+
+  &:hover {
+    transform: scale(1.05);
+  }
+
+  ion-icon {
+    font-size: 28px;
+    margin-bottom: 4px;
+  }
+
+  h2 {
+    margin: 4px 0;
+    font-size: 28px;
+    font-weight: bold;
+  }
+
+  p {
+    margin: 4px 0 0 0;
+    color: var(--ion-color-medium);
+    font-size: 12px;
+  }
+}
+
+ion-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+  ion-card-header {
+    border-bottom: 1px solid var(--ion-color-light);
+    
+    ion-card-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 18px;
+      font-weight: 600;
+
+      ion-icon {
+        font-size: 24px;
+      }
+    }
+  }
+}
+
+ion-list {
+  background: transparent;
+  
+  ion-item {
+    --padding-start: 16px;
+    --inner-padding-end: 16px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+
+    &[color="danger"],
+    &[color="warning"] {
+      --background: rgba(var(--ion-color-danger-rgb), 0.1);
+      margin-bottom: 8px;
+    }
+  }
+}
+
+@media print {
+  ion-header,
+  ion-toolbar,
+  ion-fab,
+  ion-button {
+    display: none !important;
+  }
+
+  ion-card {
+    page-break-inside: avoid;
+  }
+}

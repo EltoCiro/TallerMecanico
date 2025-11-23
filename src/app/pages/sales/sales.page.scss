@@ -1,0 +1,436 @@
+// ==================== ESTILOS GENERALES ====================
+
+.ion-padding {
+  padding-bottom: 80px;
+}
+
+// ==================== CARRITO DE COMPRAS ====================
+
+.product-search-list {
+  max-height: 300px;
+  overflow-y: auto;
+  margin-top: 8px;
+  border: 1px solid var(--ion-color-light);
+  border-radius: 8px;
+
+  ion-item {
+    --padding-start: 12px;
+    --padding-end: 12px;
+    
+    h3 {
+      font-weight: 600;
+      color: var(--ion-color-dark);
+    }
+
+    p {
+      font-size: 0.85rem;
+      color: var(--ion-color-medium);
+      margin: 4px 0;
+    }
+  }
+}
+
+.cart-table {
+  width: 100%;
+  overflow-x: auto;
+  margin-top: 16px;
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+
+    thead {
+      background-color: var(--ion-color-light);
+      
+      th {
+        padding: 12px 8px;
+        text-align: left;
+        font-weight: 600;
+        color: var(--ion-color-dark);
+        border-bottom: 2px solid var(--ion-color-medium);
+
+        &.center {
+          text-align: center;
+        }
+      }
+    }
+
+    tbody {
+      tr {
+        border-bottom: 1px solid var(--ion-color-light);
+
+        &:hover {
+          background-color: var(--ion-color-light-tint);
+        }
+
+        td {
+          padding: 12px 8px;
+          vertical-align: middle;
+
+          &.center {
+            text-align: center;
+          }
+
+          &.price {
+            font-weight: 600;
+            color: var(--ion-color-success);
+          }
+        }
+      }
+    }
+  }
+
+  .product-name {
+    font-weight: 600;
+    color: var(--ion-color-dark);
+    margin-bottom: 4px;
+  }
+
+  .product-stock {
+    font-size: 0.8rem;
+    color: var(--ion-color-medium);
+  }
+
+  .quantity-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    ion-button {
+      --padding-start: 4px;
+      --padding-end: 4px;
+      margin: 0;
+    }
+
+    .quantity {
+      min-width: 30px;
+      text-align: center;
+      font-weight: 600;
+      font-size: 1rem;
+    }
+  }
+
+  .price-input {
+    max-width: 100px;
+    --padding-start: 8px;
+    --padding-end: 8px;
+    text-align: center;
+  }
+}
+
+// ==================== TOTALES ====================
+
+.totals-list {
+  margin-top: 16px;
+  border-top: 2px solid var(--ion-color-light);
+  padding-top: 8px;
+
+  ion-item {
+    --padding-start: 0;
+    --padding-end: 0;
+    --inner-padding-end: 0;
+    font-size: 0.95rem;
+
+    ion-label {
+      font-weight: 500;
+    }
+
+    ion-note {
+      font-size: 1rem;
+    }
+
+    &.total-item {
+      margin-top: 8px;
+      padding-top: 12px;
+      border-top: 2px solid var(--ion-color-dark);
+
+      .total-label {
+        font-size: 1.1rem;
+        font-weight: 700;
+      }
+
+      .total-amount {
+        font-size: 1.3rem;
+        font-weight: 700;
+      }
+    }
+  }
+}
+
+.action-buttons {
+  ion-button {
+    margin-top: 8px;
+  }
+}
+
+// ==================== ESTADÍSTICAS ====================
+
+.stats-container {
+  background: linear-gradient(135deg, var(--ion-color-primary-tint), var(--ion-color-secondary-tint));
+  padding: 16px;
+  margin-bottom: 0;
+
+  .stat-card {
+    margin: 4px 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+    ion-card-content {
+      padding: 16px;
+      text-align: center;
+
+      .stat-title {
+        font-size: 0.85rem;
+        color: var(--ion-color-medium);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+      }
+
+      .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--ion-color-primary);
+        margin-bottom: 4px;
+      }
+
+      .stat-subtitle {
+        font-size: 0.95rem;
+        color: var(--ion-color-success);
+        font-weight: 600;
+      }
+    }
+  }
+}
+
+// ==================== CARDS DE VENTAS ====================
+
+.sale-card {
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  ion-card-header {
+    padding-bottom: 8px;
+
+    ion-card-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 1.1rem;
+      flex-wrap: wrap;
+
+      ion-icon {
+        color: var(--ion-color-primary);
+      }
+
+      .method-chip {
+        margin-left: auto;
+        height: 28px;
+      }
+    }
+
+    ion-card-subtitle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 4px;
+      font-size: 0.85rem;
+
+      ion-icon {
+        font-size: 0.9rem;
+      }
+    }
+  }
+
+  ion-card-content {
+    padding-top: 8px;
+
+    ion-list {
+      margin-bottom: 12px;
+
+      ion-item {
+        --padding-start: 0;
+        --inner-padding-end: 0;
+        margin-bottom: 8px;
+
+        ion-icon {
+          font-size: 1.2rem;
+          margin-right: 12px;
+        }
+
+        ion-label {
+          p {
+            font-size: 0.8rem;
+            color: var(--ion-color-medium);
+            margin-bottom: 2px;
+          }
+
+          h3 {
+            font-weight: 600;
+            color: var(--ion-color-dark);
+            margin: 0;
+          }
+
+          h2 {
+            font-size: 1.3rem;
+            margin: 0;
+          }
+        }
+      }
+    }
+  }
+}
+
+// ==================== FILTROS ====================
+
+ion-card {
+  ion-card-header {
+    ion-card-subtitle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 600;
+
+      ion-icon {
+        font-size: 1.1rem;
+      }
+    }
+  }
+}
+
+// ==================== LOADING ====================
+
+ion-skeleton-text {
+  margin: 8px 0;
+}
+
+// ==================== RESPONSIVE ====================
+
+@media (max-width: 768px) {
+  .cart-table {
+    table {
+      font-size: 0.8rem;
+
+      thead th,
+      tbody td {
+        padding: 8px 4px;
+      }
+
+      .price-input {
+        max-width: 80px;
+        font-size: 0.85rem;
+      }
+    }
+
+    .quantity-controls {
+      gap: 4px;
+
+      .quantity {
+        min-width: 25px;
+        font-size: 0.9rem;
+      }
+    }
+  }
+
+  .stats-container {
+    .stat-card {
+      ion-card-content {
+        padding: 12px;
+
+        .stat-value {
+          font-size: 1.5rem;
+        }
+
+        .stat-subtitle {
+          font-size: 0.85rem;
+        }
+      }
+    }
+  }
+}
+
+@media (min-width: 768px) {
+  .cart-table {
+    .price-input {
+      max-width: 120px;
+    }
+  }
+}
+
+// ==================== ICONOS Y BADGES ====================
+
+ion-badge {
+  margin-left: 8px;
+}
+
+ion-chip {
+  ion-icon {
+    font-size: 1rem;
+  }
+
+  ion-label {
+    text-transform: capitalize;
+  }
+}
+
+// ==================== UTILIDADES ====================
+
+.ion-text-center {
+  text-align: center;
+}
+
+ion-searchbar {
+  --border-radius: 8px;
+  padding: 8px 0;
+}
+
+ion-card-title {
+  ion-icon {
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+}
+
+// ==================== FAB ====================
+
+ion-fab {
+  ion-fab-button {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+}
+
+// ==================== ESTADOS VACÍOS ====================
+
+.empty-state {
+  ion-card-content {
+    padding: 40px 20px;
+
+    ion-icon {
+      font-size: 4rem;
+      margin-bottom: 16px;
+    }
+
+    h3 {
+      font-weight: 600;
+      color: var(--ion-color-dark);
+      margin-bottom: 8px;
+    }
+
+    p {
+      color: var(--ion-color-medium);
+    }
+  }
+}
+
+ion-item {
+  --padding-start: 0;
+  margin-bottom: 12px;
+}
+

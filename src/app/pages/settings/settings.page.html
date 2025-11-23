@@ -1,0 +1,73 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button routerLink="/tabs/home">
+        <ion-icon name="home-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Configuración</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>
+        <ion-icon name="person-outline"></ion-icon>
+        Usuario Actual
+      </ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-list>
+        <ion-item>
+          <ion-label>
+            <h2>{{ currentUser?.nombre }}</h2>
+            <p>Rol: {{ currentUser?.rol }}</p>
+          </ion-label>
+        </ion-item>
+      </ion-list>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>
+        <ion-icon name="link-outline"></ion-icon>
+        Configuración de API
+      </ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-item>
+        <ion-label position="floating">URL del Servidor</ion-label>
+        <ion-input 
+          [(ngModel)]="apiUrl" 
+          type="text"
+          placeholder="http://localhost:3000">
+        </ion-input>
+      </ion-item>
+      <ion-button expand="block" (click)="saveApiUrl()">
+        <ion-icon name="save-outline" slot="start"></ion-icon>
+        Guardar URL
+      </ion-button>
+      <ion-text color="medium">
+        <p><small>URL actual: {{ apiUrl }}</small></p>
+      </ion-text>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-card>
+    <ion-card-content>
+      <ion-button expand="block" color="danger" (click)="logout()">
+        <ion-icon name="log-out-outline" slot="start"></ion-icon>
+        Cerrar Sesión
+      </ion-button>
+    </ion-card-content>
+  </ion-card>
+
+  <div class="ion-text-center ion-margin-top">
+    <ion-text color="medium">
+      <p><small>Sistema de Control de Taller Mecánico v1.0</small></p>
+      <p><small>Para gestionar usuarios del sistema, ve a Personal → Usuarios del Sistema</small></p>
+    </ion-text>
+  </div>
+</ion-content>

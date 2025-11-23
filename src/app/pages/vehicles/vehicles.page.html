@@ -1,0 +1,309 @@
+<ion-header [translucent]="true">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Vehículos</ion-title>
+  </ion-toolbar>
+
+  <!-- Barra de búsqueda -->
+  <ion-toolbar>
+    <ion-searchbar
+      [(ngModel)]="searchTerm"
+      (ionInput)="onSearchChange($event)"
+      placeholder="Buscar por marca, modelo, placas, VIN o cliente..."
+      animated
+      debounce="300">
+    </ion-searchbar>
+  </ion-toolbar>
+
+  <!-- Filtros y vista -->
+  <ion-toolbar>
+    <ion-segment [(ngModel)]="viewMode" (ionChange)="onViewModeChange($event)" value="cards">
+      <ion-segment-button value="cards">
+        <ion-icon name="card"></ion-icon>
+        <ion-label>Tarjetas</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="list">
+        <ion-icon name="list"></ion-icon>
+        <ion-label>Lista</ion-label>
+      </ion-segment-button>
+    </ion-segment>
+  </ion-toolbar>
+
+  <!-- Filtro por cliente -->
+  <ion-toolbar>
+    <ion-item lines="none">
+      <ion-label>Filtrar por cliente:</ion-label>
+      <ion-select
+        [(ngModel)]="selectedClientFilter"
+        (ionChange)="onClientFilterChange($event)"
+        placeholder="Todos los clientes"
+        interface="popover">
+        <ion-select-option [value]="null">Todos los clientes</ion-select-option>
+        <ion-select-option *ngFor="let client of clients" [value]="client.id">
+          {{ client.nombre }}
+        </ion-select-option>
+      </ion-select>
+    </ion-item>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <!-- Pull to refresh -->
+  <ion-refresher slot="fixed" (ionRefresh)="handleRefresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <!-- Skeleton Loading -->
+  <div *ngIf="isLoading" class="loading-container">
+    <ion-card *ngFor="let i of [1,2,3]">
+      <ion-card-header>
+        <ion-skeleton-text [animated]="true" style="width: 60%"></ion-skeleton-text>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-skeleton-text [animated]="true" style="width: 80%"></ion-skeleton-text>
+        <ion-skeleton-text [animated]="true" style="width: 50%"></ion-skeleton-text>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <!-- Vista de tarjetas -->
+  <div *ngIf="!isLoading && viewMode === 'cards'" class="cards-container">
+    <div *ngIf="filteredVehicles.length === 0" class="empty-state">
+      <ion-icon name="car" color="medium" size="large"></ion-icon>
+      <p>No hay vehículos registrados</p>
+      <ion-button *ngIf="canEdit" (click)="openCreateModal()" fill="outline">
+        <ion-icon slot="start" name="add"></ion-icon>
+        Agregar Vehículo
+      </ion-button>
+    </div>
+
+    <ion-card *ngFor="let vehicle of filteredVehicles" class="vehicle-card">
+      <ion-card-header>
+        <div class="card-header-content">
+          <div>
+            <ion-card-title>{{ vehicle.marca }} {{ vehicle.modelo }}</ion-card-title>
+            <ion-chip color="primary" outline>
+              <ion-icon name="calendar"></ion-icon>
+              <ion-label>{{ vehicle.anio }}</ion-label>
+            </ion-chip>
+          </div>
+          <ion-badge *ngIf="getServiceCount(vehicle.id) > 0" color="success">
+            {{ getServiceCount(vehicle.id) }} servicios
+          </ion-badge>
+        </div>
+      </ion-card-header>
+
+      <ion-card-content>
+        <div class="vehicle-info">
+          <div class="info-row" *ngIf="vehicle.placas">
+            <ion-icon name="card"></ion-icon>
+            <span><strong>Placas:</strong> {{ vehicle.placas }}</span>
+          </div>
+          <div class="info-row" *ngIf="vehicle.vin">
+            <ion-icon name="construct"></ion-icon>
+            <span><strong>VIN:</strong> {{ vehicle.vin }}</span>
+          </div>
+          <div class="info-row">
+            <ion-icon name="person"></ion-icon>
+            <span><strong>Cliente:</strong> {{ getClientName(vehicle.ClienteId) }}</span>
+          </div>
+          <div class="info-row" *ngIf="getClientPhone(vehicle.ClienteId)">
+            <ion-icon name="call"></ion-icon>
+            <span>{{ getClientPhone(vehicle.ClienteId) }}</span>
+          </div>
+        </div>
+
+        <div class="card-actions">
+          <ion-button
+            fill="clear"
+            size="small"
+            (click)="viewServiceHistory(vehicle)">
+            <ion-icon slot="start" name="time"></ion-icon>
+            Historial
+          </ion-button>
+          <ion-button
+            *ngIf="canEdit"
+            fill="clear"
+            size="small"
+            (click)="openEditModal(vehicle)">
+            <ion-icon slot="start" name="create"></ion-icon>
+            Editar
+          </ion-button>
+          <ion-button
+            *ngIf="canEdit"
+            fill="clear"
+            size="small"
+            color="danger"
+            (click)="confirmDelete(vehicle)">
+            <ion-icon slot="start" name="trash"></ion-icon>
+            Eliminar
+          </ion-button>
+        </div>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <!-- Vista de lista -->
+  <ion-list *ngIf="!isLoading && viewMode === 'list'">
+    <div *ngIf="filteredVehicles.length === 0" class="empty-state">
+      <ion-icon name="car" color="medium" size="large"></ion-icon>
+      <p>No hay vehículos registrados</p>
+      <ion-button *ngIf="canEdit" (click)="openCreateModal()" fill="outline">
+        <ion-icon slot="start" name="add"></ion-icon>
+        Agregar Vehículo
+      </ion-button>
+    </div>
+
+    <ion-item-sliding *ngFor="let vehicle of filteredVehicles">
+      <ion-item>
+        <ion-icon name="car" slot="start" color="primary"></ion-icon>
+        <ion-label>
+          <h2><strong>{{ vehicle.marca }} {{ vehicle.modelo }}</strong></h2>
+          <p>Año: {{ vehicle.anio }} | Placas: {{ vehicle.placas || 'N/A' }}</p>
+          <p>Cliente: {{ getClientName(vehicle.ClienteId) }}</p>
+        </ion-label>
+        <ion-badge *ngIf="getServiceCount(vehicle.id) > 0" color="success" slot="end">
+          {{ getServiceCount(vehicle.id) }} servicios
+        </ion-badge>
+      </ion-item>
+
+      <ion-item-options side="end">
+        <ion-item-option color="tertiary" (click)="viewServiceHistory(vehicle)">
+          <ion-icon slot="icon-only" name="time"></ion-icon>
+        </ion-item-option>
+        <ion-item-option *ngIf="canEdit" color="primary" (click)="openEditModal(vehicle)">
+          <ion-icon slot="icon-only" name="create"></ion-icon>
+        </ion-item-option>
+        <ion-item-option *ngIf="canEdit" color="danger" (click)="confirmDelete(vehicle)">
+          <ion-icon slot="icon-only" name="trash"></ion-icon>
+        </ion-item-option>
+      </ion-item-options>
+    </ion-item-sliding>
+  </ion-list>
+
+  <!-- FAB para agregar vehículo -->
+  <ion-fab *ngIf="canEdit" vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab-button (click)="openCreateModal()">
+      <ion-icon name="add"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+
+  <!-- Modal para crear/editar vehículo -->
+  <ion-modal [isOpen]="isModalOpen" (didDismiss)="closeModal()">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar color="primary">
+          <ion-title>{{ modalMode === 'create' ? 'Nuevo Vehículo' : 'Editar Vehículo' }}</ion-title>
+          <ion-buttons slot="end">
+            <ion-button (click)="closeModal()">
+              <ion-icon name="close"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+
+      <ion-content class="ion-padding">
+        <form>
+          <!-- Cliente -->
+          <ion-item [class.ion-invalid]="validationErrors['ClienteId']">
+            <ion-label position="stacked">Cliente *</ion-label>
+            <ion-select
+              [(ngModel)]="selectedVehicle.ClienteId"
+              name="ClienteId"
+              placeholder="Selecciona un cliente"
+              interface="action-sheet"
+              (ionChange)="onClientSelected($event)">
+              <ion-select-option *ngFor="let client of clients" [value]="client.id">
+                {{ client.nombre }}
+              </ion-select-option>
+            </ion-select>
+          </ion-item>
+          <ion-text color="danger" *ngIf="validationErrors['ClienteId']">
+            <p class="error-message">{{ validationErrors['ClienteId'] }}</p>
+          </ion-text>
+
+          <!-- Marca -->
+          <ion-item [class.ion-invalid]="validationErrors['marca']">
+            <ion-label position="stacked">Marca *</ion-label>
+            <ion-input
+              [(ngModel)]="selectedVehicle.marca"
+              name="marca"
+              type="text"
+              placeholder="Ej: Toyota, Ford, Chevrolet"
+              required>
+            </ion-input>
+          </ion-item>
+          <ion-text color="danger" *ngIf="validationErrors['marca']">
+            <p class="error-message">{{ validationErrors['marca'] }}</p>
+          </ion-text>
+
+          <!-- Modelo -->
+          <ion-item [class.ion-invalid]="validationErrors['modelo']">
+            <ion-label position="stacked">Modelo *</ion-label>
+            <ion-input
+              [(ngModel)]="selectedVehicle.modelo"
+              name="modelo"
+              type="text"
+              placeholder="Ej: Corolla, F-150, Silverado"
+              required>
+            </ion-input>
+          </ion-item>
+          <ion-text color="danger" *ngIf="validationErrors['modelo']">
+            <p class="error-message">{{ validationErrors['modelo'] }}</p>
+          </ion-text>
+
+          <!-- Año -->
+          <ion-item [class.ion-invalid]="validationErrors['anio']">
+            <ion-label position="stacked">Año *</ion-label>
+            <ion-input
+              [(ngModel)]="selectedVehicle.anio"
+              name="anio"
+              type="number"
+              min="1900"
+              max="2026"
+              placeholder="Ej: 2023"
+              required>
+            </ion-input>
+          </ion-item>
+          <ion-text color="danger" *ngIf="validationErrors['anio']">
+            <p class="error-message">{{ validationErrors['anio'] }}</p>
+          </ion-text>
+
+          <!-- Placas -->
+          <ion-item>
+            <ion-label position="stacked">Placas</ion-label>
+            <ion-input
+              [(ngModel)]="selectedVehicle.placas"
+              name="placas"
+              type="text"
+              placeholder="Ej: ABC-123">
+            </ion-input>
+          </ion-item>
+
+          <!-- VIN -->
+          <ion-item>
+            <ion-label position="stacked">VIN</ion-label>
+            <ion-input
+              [(ngModel)]="selectedVehicle.vin"
+              name="vin"
+              type="text"
+              placeholder="Número de identificación del vehículo">
+            </ion-input>
+          </ion-item>
+
+          <div class="form-buttons">
+            <ion-button expand="block" (click)="saveVehicle()" color="primary">
+              <ion-icon slot="start" name="save"></ion-icon>
+              {{ modalMode === 'create' ? 'Crear Vehículo' : 'Guardar Cambios' }}
+            </ion-button>
+            <ion-button expand="block" (click)="closeModal()" fill="outline">
+              Cancelar
+            </ion-button>
+          </div>
+        </form>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+</ion-content>

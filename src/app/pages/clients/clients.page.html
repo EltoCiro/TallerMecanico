@@ -1,0 +1,523 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button routerLink="/tabs/home">
+        <ion-icon name="home-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Clientes</ion-title>
+  </ion-toolbar>
+  <ion-toolbar>
+    <ion-searchbar 
+      [(ngModel)]="searchTerm"
+      (ionInput)="filterClients()"
+      placeholder="Buscar por nombre, teléfono, correo..."
+      debounce="300">
+    </ion-searchbar>
+  </ion-toolbar>
+  <ion-toolbar>
+    <ion-segment [(ngModel)]="viewMode" (ionChange)="changeViewMode(viewMode)">
+      <ion-segment-button value="list">
+        <ion-icon name="list-outline"></ion-icon>
+        <ion-label>Lista</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="cards">
+        <ion-icon name="grid-outline"></ion-icon>
+        <ion-label>Tarjetas</ion-label>
+      </ion-segment-button>
+    </ion-segment>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-refresher slot="fixed" (ionRefresh)="loadClients($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <!-- Loading Skeleton -->
+  <div *ngIf="isLoading" class="ion-padding">
+    <ion-card *ngFor="let item of [1,2,3,4,5]">
+      <ion-card-content>
+        <ion-skeleton-text [animated]="true" style="width: 60%"></ion-skeleton-text>
+        <ion-skeleton-text [animated]="true" style="width: 40%"></ion-skeleton-text>
+        <ion-skeleton-text [animated]="true" style="width: 50%"></ion-skeleton-text>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <!-- Empty State -->
+  <div class="ion-padding" *ngIf="!isLoading && filteredClients.length === 0">
+    <ion-card>
+      <ion-card-content class="ion-text-center">
+        <ion-icon name="person-outline" size="large" color="medium"></ion-icon>
+        <h2>No hay clientes</h2>
+        <p *ngIf="searchTerm">No se encontraron resultados para "{{ searchTerm }}"</p>
+        <p *ngIf="!searchTerm">Agrega tu primer cliente para comenzar</p>
+        <ion-button *ngIf="!searchTerm && canEdit" (click)="openCreateClientModal()">
+          <ion-icon name="add-outline" slot="start"></ion-icon>
+          Agregar Cliente
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <!-- List View -->
+  <ion-list *ngIf="!isLoading && viewMode === 'list' && filteredClients.length > 0">
+    <ion-item-sliding *ngFor="let client of filteredClients">
+      <ion-item button (click)="openClientDetails(client)">
+        <ion-icon name="person-outline" slot="start" color="primary"></ion-icon>
+        <ion-label>
+          <h2><strong>{{ client.nombre }}</strong></h2>
+          <p *ngIf="client.telefono">
+            <ion-icon name="call-outline"></ion-icon>
+            {{ client.telefono }}
+          </p>
+          <p *ngIf="client.correo">
+            <ion-icon name="mail-outline"></ion-icon>
+            {{ client.correo }}
+          </p>
+          <p *ngIf="client.direccion">
+            <ion-icon name="location-outline"></ion-icon>
+            {{ client.direccion }}
+          </p>
+        </ion-label>
+        <ion-badge slot="end" color="primary" *ngIf="client.Vehicles && client.Vehicles.length > 0">
+          <ion-icon name="car-outline"></ion-icon>
+          {{ client.Vehicles.length }}
+        </ion-badge>
+      </ion-item>
+
+      <ion-item-options side="end" *ngIf="canEdit">
+        <ion-item-option color="primary" (click)="openEditClientModal(client)">
+          <ion-icon slot="icon-only" name="create-outline"></ion-icon>
+        </ion-item-option>
+        <ion-item-option color="danger" (click)="confirmDeleteClient(client, $event)">
+          <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+        </ion-item-option>
+      </ion-item-options>
+    </ion-item-sliding>
+  </ion-list>
+
+  <!-- Cards View -->
+  <ion-grid *ngIf="!isLoading && viewMode === 'cards' && filteredClients.length > 0">
+    <ion-row>
+      <ion-col size="12" size-md="6" size-lg="4" *ngFor="let client of filteredClients">
+        <ion-card button (click)="openClientDetails(client)">
+          <ion-card-header>
+            <ion-card-title>
+              <ion-icon name="person-outline" color="primary"></ion-icon>
+              {{ client.nombre }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            <div class="client-info">
+              <p *ngIf="client.telefono">
+                <ion-icon name="call-outline" color="medium"></ion-icon>
+                <span>{{ client.telefono }}</span>
+              </p>
+              <p *ngIf="client.correo">
+                <ion-icon name="mail-outline" color="medium"></ion-icon>
+                <span>{{ client.correo }}</span>
+              </p>
+              <p *ngIf="client.direccion">
+                <ion-icon name="location-outline" color="medium"></ion-icon>
+                <span>{{ client.direccion }}</span>
+              </p>
+            </div>
+            
+            <div class="card-actions">
+              <ion-chip color="primary" *ngIf="client.Vehicles && client.Vehicles.length > 0">
+                <ion-icon name="car-outline"></ion-icon>
+                <ion-label>{{ client.Vehicles.length }} vehículo(s)</ion-label>
+              </ion-chip>
+              
+              <div class="action-buttons" *ngIf="canEdit">
+                <ion-button size="small" fill="clear" (click)="openEditClientModal(client); $event.stopPropagation()">
+                  <ion-icon name="create-outline" slot="icon-only"></ion-icon>
+                </ion-button>
+                <ion-button size="small" fill="clear" color="danger" (click)="confirmDeleteClient(client, $event); $event.stopPropagation()">
+                  <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+                </ion-button>
+              </div>
+            </div>
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+
+  <!-- Floating Action Button -->
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed" *ngIf="canEdit">
+    <ion-fab-button (click)="openCreateClientModal()">
+      <ion-icon name="add-outline"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+</ion-content>
+
+<!-- ==================== CLIENT FORM MODAL ==================== -->
+<ion-modal [isOpen]="isClientModalOpen" (didDismiss)="closeClientModal()">
+  <ng-template>
+    <ion-header>
+      <ion-toolbar color="primary">
+        <ion-title>{{ selectedClient ? 'Editar Cliente' : 'Nuevo Cliente' }}</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="closeClientModal()">
+            <ion-icon name="close-outline"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content class="ion-padding">
+      <form [formGroup]="clientForm">
+        <ion-item>
+          <ion-label position="stacked">Nombre <ion-text color="danger">*</ion-text></ion-label>
+          <ion-input 
+            formControlName="nombre" 
+            placeholder="Nombre completo del cliente"
+            type="text">
+          </ion-input>
+        </ion-item>
+        <ion-note color="danger" *ngIf="clientForm.get('nombre')?.invalid && clientForm.get('nombre')?.touched">
+          El nombre es obligatorio
+        </ion-note>
+
+        <ion-item>
+          <ion-label position="stacked">Teléfono</ion-label>
+          <ion-input 
+            formControlName="telefono" 
+            placeholder="(123) 456-7890"
+            type="tel">
+          </ion-input>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="stacked">Correo Electrónico</ion-label>
+          <ion-input 
+            formControlName="correo" 
+            placeholder="cliente@ejemplo.com"
+            type="email">
+          </ion-input>
+        </ion-item>
+        <ion-note color="danger" *ngIf="clientForm.get('correo')?.invalid && clientForm.get('correo')?.touched">
+          Ingresa un correo válido
+        </ion-note>
+
+        <ion-item>
+          <ion-label position="stacked">Dirección</ion-label>
+          <ion-textarea 
+            formControlName="direccion" 
+            placeholder="Dirección completa"
+            rows="3">
+          </ion-textarea>
+        </ion-item>
+      </form>
+
+      <div class="ion-padding-top">
+        <ion-button expand="block" (click)="saveClient()" [disabled]="clientForm.invalid">
+          <ion-icon name="save-outline" slot="start"></ion-icon>
+          {{ selectedClient ? 'Actualizar' : 'Guardar' }}
+        </ion-button>
+        <ion-button expand="block" fill="clear" (click)="closeClientModal()">
+          Cancelar
+        </ion-button>
+      </div>
+    </ion-content>
+  </ng-template>
+</ion-modal>
+
+<!-- ==================== VEHICLE FORM MODAL ==================== -->
+<ion-modal [isOpen]="isVehicleModalOpen" (didDismiss)="closeVehicleModal()">
+  <ng-template>
+    <ion-header>
+      <ion-toolbar color="primary">
+        <ion-title>{{ selectedVehicle ? 'Editar Vehículo' : 'Agregar Vehículo' }}</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="closeVehicleModal()">
+            <ion-icon name="close-outline"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content class="ion-padding">
+      <form [formGroup]="vehicleForm">
+        <ion-item>
+          <ion-label position="stacked">Marca <ion-text color="danger">*</ion-text></ion-label>
+          <ion-input 
+            formControlName="marca" 
+            placeholder="Ej: Toyota, Honda, Ford"
+            type="text">
+          </ion-input>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="stacked">Modelo <ion-text color="danger">*</ion-text></ion-label>
+          <ion-input 
+            formControlName="modelo" 
+            placeholder="Ej: Corolla, Civic, F-150"
+            type="text">
+          </ion-input>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="stacked">Año <ion-text color="danger">*</ion-text></ion-label>
+          <ion-input 
+            formControlName="anio" 
+            placeholder="2024"
+            type="number"
+            min="1900"
+            [max]="maxYear">
+          </ion-input>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="stacked">Placas</ion-label>
+          <ion-input 
+            formControlName="placas" 
+            placeholder="ABC-123"
+            type="text">
+          </ion-input>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="stacked">VIN</ion-label>
+          <ion-input 
+            formControlName="vin" 
+            placeholder="Número de Identificación Vehicular"
+            type="text">
+          </ion-input>
+        </ion-item>
+      </form>
+
+      <div class="ion-padding-top">
+        <ion-button expand="block" (click)="saveVehicle()" [disabled]="vehicleForm.invalid">
+          <ion-icon name="save-outline" slot="start"></ion-icon>
+          {{ selectedVehicle ? 'Actualizar' : 'Guardar' }}
+        </ion-button>
+        <ion-button expand="block" fill="clear" (click)="closeVehicleModal()">
+          Cancelar
+        </ion-button>
+      </div>
+    </ion-content>
+  </ng-template>
+</ion-modal>
+
+<!-- ==================== CLIENT DETAILS MODAL ==================== -->
+<ion-modal [isOpen]="isDetailModalOpen" (didDismiss)="closeDetailModal()">
+  <ng-template>
+    <ion-header>
+      <ion-toolbar color="primary">
+        <ion-title>{{ selectedClient?.nombre }}</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="closeDetailModal()">
+            <ion-icon name="close-outline"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content>
+      <div class="ion-padding" *ngIf="selectedClient">
+        <!-- Client Information -->
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>Información del Cliente</ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            <ion-list>
+              <ion-item>
+                <ion-icon name="person-outline" slot="start" color="primary"></ion-icon>
+                <ion-label>
+                  <p>Nombre</p>
+                  <h2>{{ selectedClient.nombre }}</h2>
+                </ion-label>
+              </ion-item>
+              <ion-item *ngIf="selectedClient.telefono">
+                <ion-icon name="call-outline" slot="start" color="primary"></ion-icon>
+                <ion-label>
+                  <p>Teléfono</p>
+                  <h2>{{ selectedClient.telefono }}</h2>
+                </ion-label>
+              </ion-item>
+              <ion-item *ngIf="selectedClient.correo">
+                <ion-icon name="mail-outline" slot="start" color="primary"></ion-icon>
+                <ion-label>
+                  <p>Correo</p>
+                  <h2>{{ selectedClient.correo }}</h2>
+                </ion-label>
+              </ion-item>
+              <ion-item *ngIf="selectedClient.direccion">
+                <ion-icon name="location-outline" slot="start" color="primary"></ion-icon>
+                <ion-label>
+                  <p>Dirección</p>
+                  <h2>{{ selectedClient.direccion }}</h2>
+                </ion-label>
+              </ion-item>
+            </ion-list>
+
+            <div class="ion-padding-top" *ngIf="canEdit">
+              <ion-button expand="block" (click)="openEditClientModal(selectedClient)">
+                <ion-icon name="create-outline" slot="start"></ion-icon>
+                Editar Cliente
+              </ion-button>
+            </div>
+          </ion-card-content>
+        </ion-card>
+
+        <!-- Vehicles Section -->
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>
+              Vehículos
+              <ion-badge color="primary">{{ selectedClient.Vehicles?.length || 0 }}</ion-badge>
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            <div *ngIf="!selectedClient.Vehicles || selectedClient.Vehicles.length === 0" class="ion-text-center">
+              <p>No hay vehículos registrados</p>
+              <ion-button size="small" (click)="openAddVehicleModal(selectedClient)" *ngIf="canEdit">
+                <ion-icon name="add-outline" slot="start"></ion-icon>
+                Agregar Vehículo
+              </ion-button>
+            </div>
+
+            <ion-list *ngIf="selectedClient.Vehicles && selectedClient.Vehicles.length > 0">
+              <ion-item *ngFor="let vehicle of selectedClient.Vehicles">
+                <ion-icon name="car-outline" slot="start" color="primary"></ion-icon>
+                <ion-label>
+                  <h2><strong>{{ vehicle.marca }} {{ vehicle.modelo }}</strong></h2>
+                  <p>Año: {{ vehicle.anio }}</p>
+                  <p *ngIf="vehicle.placas">Placas: {{ vehicle.placas }}</p>
+                  <p *ngIf="vehicle.vin">VIN: {{ vehicle.vin }}</p>
+                </ion-label>
+                <ion-buttons slot="end" *ngIf="canEdit">
+                  <ion-button (click)="openEditVehicleModal(selectedClient, vehicle)">
+                    <ion-icon name="create-outline" color="primary"></ion-icon>
+                  </ion-button>
+                  <ion-button (click)="confirmDeleteVehicle(selectedClient, vehicle)">
+                    <ion-icon name="trash-outline" color="danger"></ion-icon>
+                  </ion-button>
+                </ion-buttons>
+              </ion-item>
+            </ion-list>
+
+            <ion-button 
+              expand="block" 
+              fill="outline" 
+              (click)="openAddVehicleModal(selectedClient)" 
+              *ngIf="canEdit && selectedClient.Vehicles && selectedClient.Vehicles.length > 0">
+              <ion-icon name="add-outline" slot="start"></ion-icon>
+              Agregar Otro Vehículo
+            </ion-button>
+          </ion-card-content>
+        </ion-card>
+
+        <!-- Service History Button -->
+        <ion-button expand="block" fill="outline" (click)="openServiceHistory(selectedClient)">
+          <ion-icon name="document-text-outline" slot="start"></ion-icon>
+          Ver Historial de Servicios
+        </ion-button>
+      </div>
+    </ion-content>
+  </ng-template>
+</ion-modal>
+
+<!-- ==================== SERVICE HISTORY MODAL ==================== -->
+<ion-modal [isOpen]="isHistoryModalOpen" (didDismiss)="closeHistoryModal()">
+  <ng-template>
+    <ion-header>
+      <ion-toolbar color="primary">
+        <ion-title>Historial de Servicios</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="closeHistoryModal()">
+            <ion-icon name="close-outline"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content>
+      <div class="ion-padding" *ngIf="selectedClient">
+        <h2>{{ selectedClient.nombre }}</h2>
+
+        <!-- Loading State -->
+        <div *ngIf="loadingHistory" class="ion-text-center ion-padding">
+          <ion-spinner></ion-spinner>
+          <p>Cargando historial...</p>
+        </div>
+
+        <!-- Empty State -->
+        <ion-card *ngIf="!loadingHistory && serviceHistory.length === 0">
+          <ion-card-content class="ion-text-center">
+            <ion-icon name="document-text-outline" size="large" color="medium"></ion-icon>
+            <p>No hay servicios registrados para este cliente</p>
+          </ion-card-content>
+        </ion-card>
+
+        <!-- Service History by Vehicle -->
+        <div *ngIf="!loadingHistory && serviceHistory.length > 0">
+          <ion-accordion-group>
+            <ion-accordion *ngFor="let vehicle of selectedClient.Vehicles">
+              <ion-item slot="header">
+                <ion-icon name="car-outline" slot="start" color="primary"></ion-icon>
+                <ion-label>
+                  <h2>{{ vehicle.marca }} {{ vehicle.modelo }}</h2>
+                  <p>{{ vehicle.placas || 'Sin placas' }}</p>
+                </ion-label>
+                <ion-badge slot="end">{{ getServicesByVehicle(vehicle.id).length }}</ion-badge>
+              </ion-item>
+              <div slot="content">
+                <ion-list *ngIf="getServicesByVehicle(vehicle.id).length > 0">
+                  <ion-item *ngFor="let service of getServicesByVehicle(vehicle.id)">
+                    <ion-label>
+                      <h3>{{ service.descripcion || 'Servicio' }}</h3>
+                      <p>
+                        <ion-icon name="time-outline"></ion-icon>
+                        {{ formatDate(service.createdAt) }}
+                      </p>
+                      <p *ngIf="service.total">
+                        <ion-icon name="cash-outline"></ion-icon>
+                        {{ formatCurrency(service.total) }}
+                      </p>
+                    </ion-label>
+                    <ion-chip [color]="getStatusColor(service.estatus)" slot="end">
+                      <ion-icon [name]="getStatusIcon(service.estatus)"></ion-icon>
+                      <ion-label>{{ getStatusText(service.estatus) }}</ion-label>
+                    </ion-chip>
+                  </ion-item>
+                </ion-list>
+                <div *ngIf="getServicesByVehicle(vehicle.id).length === 0" class="ion-padding ion-text-center">
+                  <p>No hay servicios para este vehículo</p>
+                </div>
+              </div>
+            </ion-accordion>
+          </ion-accordion-group>
+
+          <!-- All Services Summary -->
+          <ion-card>
+            <ion-card-header>
+              <ion-card-title>Resumen Total</ion-card-title>
+            </ion-card-header>
+            <ion-card-content>
+              <ion-grid>
+                <ion-row>
+                  <ion-col size="6">
+                    <div class="stat-item">
+                      <ion-icon name="document-text-outline" color="primary"></ion-icon>
+                      <h3>{{ serviceHistory.length }}</h3>
+                      <p>Servicios</p>
+                    </div>
+                  </ion-col>
+                  <ion-col size="6">
+                    <div class="stat-item">
+                      <ion-icon name="cash-outline" color="success"></ion-icon>
+                      <h3>{{ formatCurrency(getTotalServicesAmount()) }}</h3>
+                      <p>Total</p>
+                    </div>
+                  </ion-col>
+                </ion-row>
+              </ion-grid>
+            </ion-card-content>
+          </ion-card>
+        </div>
+      </div>
+    </ion-content>
+  </ng-template>
+</ion-modal>

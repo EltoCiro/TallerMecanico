@@ -1,0 +1,348 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button routerLink="/tabs/home">
+        <ion-icon name="home-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>
+      <ion-icon [name]="currentView === 'staff' ? 'people-outline' : 'shield-checkmark-outline'" slot="start"></ion-icon>
+      Personal y Usuarios
+    </ion-title>
+  </ion-toolbar>
+  
+  <!-- Segmento de navegación -->
+  <ion-toolbar>
+    <ion-segment [(ngModel)]="currentView" (ionChange)="segmentChanged($event)" mode="md">
+      <ion-segment-button value="staff">
+        <ion-icon name="people-outline"></ion-icon>
+        <ion-label>Personal</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="users">
+        <ion-icon name="shield-checkmark-outline"></ion-icon>
+        <ion-label>Usuarios del Sistema</ion-label>
+      </ion-segment-button>
+    </ion-segment>
+  </ion-toolbar>
+
+  <!-- Barra de búsqueda -->
+  <ion-toolbar>
+    <ion-searchbar
+      [(ngModel)]="searchTerm"
+      (ionInput)="onSearch($event)"
+      [placeholder]="currentView === 'staff' ? 'Buscar personal...' : 'Buscar usuarios...'"
+      debounce="300"
+      animated="true">
+    </ion-searchbar>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <!-- Refresher -->
+  <ion-refresher slot="fixed" (ionRefresh)="refreshData($event)">
+    <ion-refresher-content
+      pullingIcon="chevron-down-circle-outline"
+      pullingText="Desliza para actualizar"
+      refreshingSpinner="circles"
+      refreshingText="Actualizando...">
+    </ion-refresher-content>
+  </ion-refresher>
+
+  <!-- ==================== SECCIÓN STAFF ==================== -->
+  <div *ngIf="currentView === 'staff'">
+    
+    <!-- Formulario de Staff -->
+    <div class="ion-padding" *ngIf="showForm">
+      <ion-card class="form-card">
+        <ion-card-header>
+          <ion-card-title>
+            <ion-icon [name]="isEditing ? 'create-outline' : 'add-outline'"></ion-icon>
+            {{ isEditing ? 'Editar' : 'Agregar' }} Personal
+          </ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <ion-item>
+            <ion-label position="floating">
+              <ion-icon name="person-outline"></ion-icon> Nombre *
+            </ion-label>
+            <ion-input
+              [(ngModel)]="formData.nombre"
+              type="text"
+              placeholder="Nombre completo"
+              required>
+            </ion-input>
+          </ion-item>
+
+          <ion-item>
+            <ion-label position="floating">
+              <ion-icon name="briefcase-outline"></ion-icon> Especialidad
+            </ion-label>
+            <ion-select
+              [(ngModel)]="formData.especialidad"
+              placeholder="Selecciona especialidad"
+              interface="action-sheet">
+              <ion-select-option *ngFor="let esp of especialidades" [value]="esp">
+                {{ esp }}
+              </ion-select-option>
+            </ion-select>
+          </ion-item>
+
+          <ion-item>
+            <ion-label position="floating">
+              <ion-icon name="time-outline"></ion-icon> Horario
+            </ion-label>
+            <ion-select
+              [(ngModel)]="formData.horario"
+              placeholder="Selecciona horario"
+              interface="action-sheet">
+              <ion-select-option *ngFor="let hor of horarios" [value]="hor">
+                {{ hor }}
+              </ion-select-option>
+            </ion-select>
+          </ion-item>
+
+          <ion-grid>
+            <ion-row>
+              <ion-col>
+                <ion-button expand="block" (click)="saveStaff()" color="primary">
+                  <ion-icon name="save-outline" slot="start"></ion-icon>
+                  {{ isEditing ? 'Actualizar' : 'Guardar' }}
+                </ion-button>
+              </ion-col>
+              <ion-col>
+                <ion-button expand="block" (click)="toggleForm()" color="light">
+                  <ion-icon name="close-outline" slot="start"></ion-icon>
+                  Cancelar
+                </ion-button>
+              </ion-col>
+            </ion-row>
+          </ion-grid>
+        </ion-card-content>
+      </ion-card>
+    </div>
+
+    <!-- Lista de Staff -->
+    <div class="ion-padding" *ngIf="!showForm">
+      <!-- Estado vacío -->
+      <ion-card *ngIf="filteredStaff.length === 0" class="empty-state">
+        <ion-card-content class="ion-text-center">
+          <ion-icon name="people-outline" size="large" color="medium"></ion-icon>
+          <h2>{{ searchTerm ? 'No se encontraron resultados' : 'No hay personal registrado' }}</h2>
+          <p *ngIf="!searchTerm && isAdmin()">Agrega el primer miembro del personal</p>
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Cards de Staff -->
+      <ion-card *ngFor="let member of filteredStaff" class="staff-card" button (click)="viewStaffDetails(member)">
+        <ion-card-content>
+          <ion-grid>
+            <ion-row>
+              <ion-col size="auto">
+                <div class="avatar">
+                  <ion-icon name="person-outline"></ion-icon>
+                </div>
+              </ion-col>
+              <ion-col>
+                <h2 class="staff-name">{{ member.nombre }}</h2>
+                
+                <div class="staff-info">
+                  <ion-chip *ngIf="member.especialidad" color="primary" class="specialty-chip">
+                    <ion-icon name="briefcase-outline"></ion-icon>
+                    <ion-label>{{ member.especialidad }}</ion-label>
+                  </ion-chip>
+                  
+                  <ion-chip *ngIf="member.horario" color="secondary" outline="true">
+                    <ion-icon name="time-outline"></ion-icon>
+                    <ion-label>{{ member.horario }}</ion-label>
+                  </ion-chip>
+                </div>
+
+                <!-- Productividad -->
+                <div *ngIf="getProductivityForStaff(member) as prod" class="productivity-stats">
+                  <ion-chip color="success">
+                    <ion-icon name="checkmark-circle-outline"></ion-icon>
+                    <ion-label>{{ prod.completedOrders }} órdenes</ion-label>
+                  </ion-chip>
+                  <ion-chip *ngIf="prod.avgRating" color="warning">
+                    <ion-icon name="trophy-outline"></ion-icon>
+                    <ion-label>{{ prod.avgRating.toFixed(1) }} ⭐</ion-label>
+                  </ion-chip>
+                </div>
+              </ion-col>
+              
+              <!-- Botones de acción -->
+              <ion-col size="auto" class="action-buttons" *ngIf="canEdit()">
+                <ion-button fill="clear" (click)="editStaff(member); $event.stopPropagation()">
+                  <ion-icon name="create-outline" slot="icon-only"></ion-icon>
+                </ion-button>
+                <ion-button fill="clear" color="danger" (click)="deleteStaff(member); $event.stopPropagation()" *ngIf="canDelete()">
+                  <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+                </ion-button>
+              </ion-col>
+            </ion-row>
+          </ion-grid>
+        </ion-card-content>
+      </ion-card>
+    </div>
+  </div>
+
+  <!-- ==================== SECCIÓN USUARIOS ==================== -->
+  <div *ngIf="currentView === 'users'">
+    
+    <!-- Formulario de Usuario -->
+    <div class="ion-padding" *ngIf="showForm && isAdmin()">
+      <ion-card class="form-card">
+        <ion-card-header>
+          <ion-card-title>
+            <ion-icon [name]="isEditing ? 'create-outline' : 'add-outline'"></ion-icon>
+            {{ isEditing ? 'Editar' : 'Registrar' }} Usuario del Sistema
+          </ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <ion-item>
+            <ion-label position="floating">
+              <ion-icon name="person-outline"></ion-icon> Nombre Completo *
+            </ion-label>
+            <ion-input
+              [(ngModel)]="userFormData.nombre"
+              type="text"
+              placeholder="Nombre del usuario"
+              required>
+            </ion-input>
+          </ion-item>
+
+          <ion-item>
+            <ion-label position="floating">
+              <ion-icon name="mail-outline"></ion-icon> Email *
+            </ion-label>
+            <ion-input
+              [(ngModel)]="userFormData.email"
+              type="email"
+              placeholder="usuario@ejemplo.com"
+              required>
+            </ion-input>
+          </ion-item>
+
+          <ion-item *ngIf="!isEditing">
+            <ion-label position="floating">
+              <ion-icon name="lock-closed-outline"></ion-icon> Contraseña *
+            </ion-label>
+            <ion-input
+              [(ngModel)]="userFormData.password"
+              type="password"
+              placeholder="Mínimo 6 caracteres"
+              required>
+            </ion-input>
+          </ion-item>
+
+          <ion-item>
+            <ion-label position="floating">
+              <ion-icon name="shield-checkmark-outline"></ion-icon> Rol del Sistema *
+            </ion-label>
+            <ion-select
+              [(ngModel)]="userFormData.rol"
+              interface="action-sheet">
+              <ion-select-option value="Mecánico">
+                <ion-icon name="construct-outline"></ion-icon> Mecánico
+              </ion-select-option>
+              <ion-select-option value="Cajero">
+                <ion-icon name="cash-outline"></ion-icon> Cajero
+              </ion-select-option>
+            </ion-select>
+          </ion-item>
+
+          <div class="info-message" *ngIf="!isEditing">
+            <ion-icon name="information-circle-outline"></ion-icon>
+            <p>El usuario recibirá acceso al sistema con el email y contraseña proporcionados.</p>
+          </div>
+
+          <ion-grid>
+            <ion-row>
+              <ion-col>
+                <ion-button expand="block" (click)="saveUser()" color="success">
+                  <ion-icon name="save-outline" slot="start"></ion-icon>
+                  {{ isEditing ? 'Actualizar' : 'Crear Usuario' }}
+                </ion-button>
+              </ion-col>
+              <ion-col>
+                <ion-button expand="block" (click)="toggleForm()" color="light">
+                  <ion-icon name="close-outline" slot="start"></ion-icon>
+                  Cancelar
+                </ion-button>
+              </ion-col>
+            </ion-row>
+          </ion-grid>
+        </ion-card-content>
+      </ion-card>
+    </div>
+
+    <!-- Lista de Usuarios -->
+    <div class="ion-padding" *ngIf="!showForm">
+      <!-- Estado vacío -->
+      <ion-card *ngIf="filteredUsers.length === 0" class="empty-state">
+        <ion-card-content class="ion-text-center">
+          <ion-icon name="people-outline" size="large" color="medium"></ion-icon>
+          <h2>{{ searchTerm ? 'No se encontraron resultados' : 'No hay usuarios registrados' }}</h2>
+          <p *ngIf="!searchTerm && isAdmin()">Agrega el primer usuario del sistema</p>
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Cards de Usuarios -->
+      <ion-card *ngFor="let user of filteredUsers" class="user-card" button (click)="viewUserDetails(user)">
+        <ion-card-content>
+          <ion-grid>
+            <ion-row>
+              <ion-col size="auto">
+                <div class="avatar" [class.admin]="user.rol === 'Administrador'" [class.mechanic]="user.rol === 'Mecánico'" [class.cashier]="user.rol === 'Cajero'">
+                  <ion-icon [name]="getRoleIcon(user.rol)"></ion-icon>
+                </div>
+              </ion-col>
+              <ion-col>
+                <h2 class="user-name">{{ user.nombre }}</h2>
+                
+                <div class="user-info">
+                  <p class="user-email">
+                    <ion-icon name="mail-outline"></ion-icon>
+                    {{ user.email }}
+                  </p>
+                  
+                  <ion-badge [color]="getRoleColor(user.rol)" class="role-badge">
+                    <ion-icon [name]="getRoleIcon(user.rol)"></ion-icon>
+                    {{ user.rol }}
+                  </ion-badge>
+                </div>
+
+                <div class="user-id">
+                  <ion-chip color="medium" outline="true">
+                    <ion-label>ID: {{ user.id }}</ion-label>
+                  </ion-chip>
+                </div>
+              </ion-col>
+              
+              <!-- Botones de acción -->
+              <ion-col size="auto" class="action-buttons" *ngIf="isAdmin()">
+                <ion-button fill="clear" (click)="editUser(user); $event.stopPropagation()">
+                  <ion-icon name="create-outline" slot="icon-only"></ion-icon>
+                </ion-button>
+                <ion-button
+                  fill="clear"
+                  color="danger"
+                  (click)="deleteUser(user); $event.stopPropagation()"
+                  *ngIf="canDelete() && user.rol !== 'Administrador'">
+                  <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+                </ion-button>
+              </ion-col>
+            </ion-row>
+          </ion-grid>
+        </ion-card-content>
+      </ion-card>
+    </div>
+  </div>
+
+  <!-- FAB para agregar -->
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed" *ngIf="canEdit()">
+    <ion-fab-button (click)="toggleForm()" [color]="showForm ? 'light' : 'primary'">
+      <ion-icon [name]="showForm ? 'close-outline' : 'add-outline'"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+</ion-content>

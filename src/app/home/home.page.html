@@ -1,20 +1,282 @@
-<ion-header [translucent]="true">
+<ion-header class="ion-no-border">
   <ion-toolbar>
     <ion-title>
-      Blank
+      <div class="header-title">
+        <ion-icon name="stats-chart-outline" class="header-icon"></ion-icon>
+        <span>Dashboard</span>
+      </div>
     </ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="logout()" color="danger">
+        <ion-icon name="log-out-outline" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Blank</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content>
+  <!-- Pull to Refresh -->
+  <ion-refresher slot="fixed" (ionRefresh)="loadStats($event)">
+    <ion-refresher-content
+      pullingIcon="chevron-down-circle-outline"
+      pullingText="Desliza para actualizar"
+      refreshingSpinner="crescent"
+      refreshingText="Actualizando...">
+    </ion-refresher-content>
+  </ion-refresher>
 
-  <div id="container">
-    <strong>Ready to create an app?</strong>
-    <p>Start with Ionic <a target="_blank" rel="noopener noreferrer" href="https://ionicframework.com/docs/components">UI Components</a></p>
-  </div>
+  <div class="dashboard-container">
+    <!-- Welcome Section -->
+    <div class="welcome-section animate-fade-in">
+      <div class="welcome-content">
+        <h1 class="welcome-title">¡Hola, {{ userName }}!</h1>
+        <p class="welcome-subtitle">
+          <ion-icon name="calendar-outline"></ion-icon>
+          {{ currentDate }}
+        </p>
+      </div>
+      <div class="role-badge badge badge-primary">
+        <ion-icon name="person-outline"></ion-icon>
+        {{ userRole }}
+      </div>
+    </div>
+
+    <!-- Estadísticas para ADMINISTRADOR -->
+    <div *ngIf="userRole === 'Administrador'">
+      <div class="section-header">
+        <h2 class="section-title">Estadísticas Generales</h2>
+        <p class="section-subtitle">Vista general del taller</p>
+      </div>
+
+      <div class="stats-grid">
+        <!-- Clientes -->
+        <div class="stat-card animate-fade-in" style="animation-delay: 0.1s">
+          <div class="icon-wrapper primary">
+            <ion-icon name="people-outline"></ion-icon>
+          </div>
+          <div class="stat-content">
+            <div class="stat-label">Clientes</div>
+            <div class="stat-value">{{ stats.clients }}</div>
+          </div>
+        </div>
+
+        <!-- Vehículos -->
+        <div class="stat-card animate-fade-in" style="animation-delay: 0.15s">
+          <div class="icon-wrapper success">
+            <ion-icon name="car-outline"></ion-icon>
+          </div>
+          <div class="stat-content">
+            <div class="stat-label">Vehículos</div>
+            <div class="stat-value">{{ stats.vehicles }}</div>
+          </div>
+        </div>
+
+        <!-- Órdenes Totales -->
+        <div class="stat-card animate-fade-in" style="animation-delay: 0.2s">
+          <div class="icon-wrapper warning">
+            <ion-icon name="construct-outline"></ion-icon>
+          </div>
+          <div class="stat-content">
+            <div class="stat-label">Órdenes Totales</div>
+            <div class="stat-value">{{ stats.orders }}</div>
+          </div>
+        </div>
+
+        <!-- Ventas Totales -->
+        <div class="stat-card animate-fade-in" style="animation-delay: 0.25s">
+          <div class="icon-wrapper success">
+            <ion-icon name="trending-up-outline"></ion-icon>
+          </div>
+          <div class="stat-content">
+            <div class="stat-label">Ventas Totales</div>
+            <div class="stat-value">${{ stats.totalSales.toFixed(2) }}</div>
+          </div>
+        </div>
+
+        <!-- Productos -->
+        <div class="stat-card animate-fade-in" style="animation-delay: 0.3s">
+          <div class="icon-wrapper primary">
+            <ion-icon name="cube-outline"></ion-icon>
+          </div>
+          <div class="stat-content">
+            <div class="stat-label">Productos</div>
+            <div class="stat-value">{{ stats.products }}</div>
+          </div>
+        </div>
+
+        <!-- Stock Bajo -->
+        <div class="stat-card animate-fade-in" style="animation-delay: 0.35s">
+          <div class="icon-wrapper danger">
+            <ion-icon name="alert-circle-outline"></ion-icon>
+          </div>
+          <div class="stat-content">
+            <div class="stat-label">Stock Bajo</div>
+            <div class="stat-value">{{ stats.lowStock }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top Mecánicos -->
+      <div class="section-header" *ngIf="topMechanics.length > 0" style="margin-top: 2rem;">
+        <h2 class="section-title">Top Mecánicos</h2>
+        <p class="section-subtitle">Mecánicos con más órdenes completadas</p>
+      </div>
+
+      <div class="mechanics-grid" *ngIf="topMechanics.length > 0">
+        <ion-card *ngFor="let mechanic of topMechanics; let i = index" class="mechanic-card animate-fade-in" [style.animation-delay]="(0.1 * (i + 1)) + 's'">
+          <ion-card-content>
+            <div class="mechanic-position">{{ i + 1 }}</div>
+            <div class="mechanic-info">
+              <h3>{{ mechanic.nombre }}</h3>
+              <p class="orders-count">
+                <ion-icon name="checkmark-circle-outline"></ion-icon>
+                {{ mechanic.completadas }} órdenes completadas
+              </p>
+            </div>
+          </ion-card-content>
+        </ion-card>
+      </div>
+    </div>
+
+    <!-- Estadísticas para MECÁNICO -->
+    <div *ngIf="userRole === 'Mecánico'">
+      <div class="section-header">
+        <h2 class="section-title">Mis Órdenes</h2>
+        <p class="section-subtitle">Estado de tus asignaciones</p>
+      </div>
+
+      <div class="stats-grid">
+        <!-- Órdenes Asignadas -->
+        <div class="stat-card animate-fade-in" style="animation-delay: 0.1s">
+          <div class="icon-wrapper primary">
+            <ion-icon name="construct-outline"></ion-icon>
+          </div>
+          <div class="stat-content">
+            <div class="stat-label">Órdenes Asignadas</div>
+            <div class="stat-value">{{ mechanicStats.assignedOrders }}</div>
+          </div>
+        </div>
+
+        <!-- Órdenes Completadas -->
+        <div class="stat-card animate-fade-in" style="animation-delay: 0.15s">
+          <div class="icon-wrapper success">
+            <ion-icon name="checkmark-circle-outline"></ion-icon>
+          </div>
+          <div class="stat-content">
+            <div class="stat-label">Completadas</div>
+            <div class="stat-value">{{ mechanicStats.completedOrders }}</div>
+          </div>
+        </div>
+
+        <!-- Órdenes Pendientes -->
+        <div class="stat-card animate-fade-in" style="animation-delay: 0.2s">
+          <div class="icon-wrapper danger">
+            <ion-icon name="time-outline"></ion-icon>
+          </div>
+          <div class="stat-content">
+            <div class="stat-label">Pendientes</div>
+            <div class="stat-value">{{ mechanicStats.pendingOrders }}</div>
+          </div>
+        </div>
+
+        <!-- Órdenes En Proceso -->
+        <div class="stat-card animate-fade-in" style="animation-delay: 0.25s">
+          <div class="icon-wrapper warning">
+            <ion-icon name="construct-outline"></ion-icon>
+          </div>
+          <div class="stat-content">
+            <div class="stat-label">En Proceso</div>
+            <div class="stat-value">{{ mechanicStats.inProgressOrders }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Estadísticas para CAJERO -->
+    <div *ngIf="userRole === 'Cajero'">
+      <div class="section-header">
+        <h2 class="section-title">Estadísticas de Ventas</h2>
+        <p class="section-subtitle">Resumen de actividad comercial</p>
+      </div>
+
+      <div class="stats-grid">
+        <!-- Ventas del Día -->
+        <div class="stat-card animate-fade-in" style="animation-delay: 0.1s">
+          <div class="icon-wrapper success">
+            <ion-icon name="cash-outline"></ion-icon>
+          </div>
+          <div class="stat-content">
+            <div class="stat-label">Ventas del Día</div>
+            <div class="stat-value">${{ stats.todaySales.toFixed(2) }}</div>
+          </div>
+        </div>
+
+        <!-- Ventas del Mes -->
+        <div class="stat-card animate-fade-in" style="animation-delay: 0.15s">
+          <div class="icon-wrapper primary">
+            <ion-icon name="wallet-outline"></ion-icon>
+          </div>
+          <div class="stat-content">
+            <div class="stat-label">Ventas del Mes</div>
+            <div class="stat-value">${{ stats.monthSales.toFixed(2) }}</div>
+          </div>
+        </div>
+
+        <!-- Clientes Atendidos -->
+        <div class="stat-card animate-fade-in" style="animation-delay: 0.2s">
+          <div class="icon-wrapper warning">
+            <ion-icon name="people-outline"></ion-icon>
+          </div>
+          <div class="stat-content">
+            <div class="stat-label">Clientes Atendidos Hoy</div>
+            <div class="stat-value">{{ stats.customersToday }}</div>
+          </div>
+        </div>
+
+        <!-- Presupuestos Pendientes -->
+        <div class="stat-card animate-fade-in" style="animation-delay: 0.25s">
+          <div class="icon-wrapper danger">
+            <ion-icon name="document-text-outline"></ion-icon>
+          </div>
+          <div class="stat-content">
+            <div class="stat-label">Presupuestos Pendientes</div>
+            <div class="stat-value">{{ stats.pendingBudgets }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    </div>
+
+    <!-- Accesos Rápidos - Navegación a Módulos -->
+    <div class="section-header" style="margin-top: 2rem;">
+      <h2 class="section-title">Módulos</h2>
+      <p class="section-subtitle">Accede a las diferentes secciones del sistema</p>
+    </div>
+
+    <div class="quick-actions-grid">
+      <div 
+        *ngFor="let action of quickActions; let i = index" 
+        class="quick-action-card modern-card animate-fade-in"
+        [style.animation-delay]="(0.05 * (i + 1)) + 's'"
+        (click)="navigateTo(action.route)"
+        [class.hidden]="!canAccessAction(action.roles)">
+        <div class="action-icon" [ngClass]="action.color">
+          <ion-icon [name]="action.icon"></ion-icon>
+        </div>
+        <div class="action-content">
+          <h3 class="action-title">{{ action.title }}</h3>
+          <ion-icon name="arrow-forward-outline" class="action-arrow"></ion-icon>
+        </div>
+      </div>
+    </div>
+
+    <!-- Status Info -->
+    <div class="status-info animate-fade-in" style="animation-delay: 0.6s">
+      <ion-icon name="checkmark-circle-outline" class="status-icon"></ion-icon>
+      <div class="status-text">
+        <p class="status-title">Sistema Operativo</p>
+        <p class="status-subtitle">Todos los servicios funcionando correctamente</p>
+      </div>
+    </div>
 </ion-content>
