@@ -529,17 +529,17 @@ app.put('/presupuestos/:id/status', authMiddleware, permit(['Administrador','Caj
 app.post('/ordenes', authMiddleware, permit(['Administrador','Mecánico','Cajero']), async (req, res) => {
   try {
     const { presupuestoId, descripcion, actividades, actividadesJson, assignedMechanicIds, notas, estatus, subtotal, impuesto, total, ClienteId, VehiculoId } = req.body;
-    
+
     // Aceptar tanto actividades como actividadesJson
     let actividadesData = actividadesJson || JSON.stringify(actividades || []);
-    
+
     const order = await Orden.create({
       descripcion: descripcion || '',
       actividadesJson: actividadesData,
       estatus: estatus || 'pendiente',
       notas: notas || '',
-      subtotal: subtotal || 0, 
-      impuesto: impuesto || 0, 
+      subtotal: subtotal || 0,
+      impuesto: impuesto || 0,
       total: total || 0,
       ClienteId: ClienteId || (presupuestoId ? (await Presupuesto.findByPk(presupuestoId))?.ClienteId : null),
       VehiculoId: VehiculoId || (presupuestoId ? (await Presupuesto.findByPk(presupuestoId))?.VehiculoId : null),
@@ -564,9 +564,9 @@ app.post('/ordenes', authMiddleware, permit(['Administrador','Mecánico','Cajero
       actividades: actividades_parsed,
       actividadesJson: order.actividadesJson
     });
-  } catch (err) { 
-    console.error(err); 
-    res.status(500).json({ error: 'Error crear orden' }); 
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error crear orden' });
   }
 });
 
@@ -575,18 +575,18 @@ app.get('/ordenes', authMiddleware, async (req, res) => {
   const mapped = orders.map(o => {
     let actividades = [];
     try { actividades = JSON.parse(o.actividadesJson || '[]'); } catch(e){}
-    return { 
-      id: o.id, 
-      descripcion: o.descripcion, 
-      estatus: o.estatus, 
-      notas: o.notas, 
-      actividades, 
+    return {
+      id: o.id,
+      descripcion: o.descripcion,
+      estatus: o.estatus,
+      notas: o.notas,
+      actividades,
       actividadesJson: o.actividadesJson, // Incluir el JSON también
-      Mechanics: o.Mechanics || [], 
-      subtotal: o.subtotal, 
-      impuesto: o.impuesto, 
-      total: o.total, 
-      ClienteId: o.ClienteId, 
+      Mechanics: o.Mechanics || [],
+      subtotal: o.subtotal,
+      impuesto: o.impuesto,
+      total: o.total,
+      ClienteId: o.ClienteId,
       VehiculoId: o.VehiculoId,
       createdAt: o.createdAt,
       updatedAt: o.updatedAt
@@ -600,16 +600,16 @@ app.get('/ordenes/:id', authMiddleware, async (req, res) => {
   if (!o) return res.status(404).json({ error: 'Orden no encontrada' });
   let actividades = [];
   try { actividades = JSON.parse(o.actividadesJson || '[]'); } catch(e){}
-  res.json({ 
-    id: o.id, 
-    descripcion: o.descripcion, 
-    estatus: o.estatus, 
-    notas: o.notas, 
-    actividades, 
+  res.json({
+    id: o.id,
+    descripcion: o.descripcion,
+    estatus: o.estatus,
+    notas: o.notas,
+    actividades,
     actividadesJson: o.actividadesJson, // Incluir el JSON también
-    Mechanics: o.Mechanics || [], 
-    subtotal: o.subtotal, 
-    impuesto: o.impuesto, 
+    Mechanics: o.Mechanics || [],
+    subtotal: o.subtotal,
+    impuesto: o.impuesto,
     total: o.total,
     ClienteId: o.ClienteId,
     VehiculoId: o.VehiculoId,
@@ -623,49 +623,49 @@ app.put('/ordenes/:id', authMiddleware, permit(['Administrador','Mecánico']), a
     const { descripcion, actividades, actividadesJson, assignedMechanicIds, notas, estatus, subtotal, impuesto, total, ClienteId, VehiculoId } = req.body;
     const o = await Orden.findByPk(req.params.id);
     if (!o) return res.status(404).json({ error: 'Orden no encontrada' });
-    
+
     if (descripcion !== undefined) o.descripcion = descripcion;
-    
+
     // Aceptar tanto actividades como actividadesJson
     if (actividadesJson !== undefined) {
       o.actividadesJson = actividadesJson;
     } else if (actividades !== undefined) {
       o.actividadesJson = JSON.stringify(actividades);
     }
-    
+
     if (notas !== undefined) o.notas = notas;
     if (subtotal !== undefined) o.subtotal = subtotal;
     if (impuesto !== undefined) o.impuesto = impuesto;
     if (total !== undefined) o.total = total;
     if (ClienteId !== undefined) o.ClienteId = ClienteId;
     if (VehiculoId !== undefined) o.VehiculoId = VehiculoId;
-    
+
     if (estatus !== undefined) {
       if (!['pendiente','en_proceso','completada'].includes(estatus)) return res.status(400).json({ error: 'Estatus inválido' });
       o.estatus = estatus;
     }
-    
+
     await o.save();
-    
+
     if (assignedMechanicIds && Array.isArray(assignedMechanicIds)) {
       await o.setMechanics(assignedMechanicIds);
     }
-    
+
     // Devolver la orden actualizada con actividades parseadas
     let actividades_parsed = [];
     try { actividades_parsed = JSON.parse(o.actividadesJson || '[]'); } catch(e){}
-    
-    res.json({ 
-      message: 'Orden actualizada', 
+
+    res.json({
+      message: 'Orden actualizada',
       orden: {
         ...o.toJSON(),
         actividades: actividades_parsed,
         actividadesJson: o.actividadesJson
       }
     });
-  } catch (err) { 
-    console.error(err); 
-    res.status(500).json({ error: 'Error actualizar orden' }); 
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error actualizar orden' });
   }
 });
 
@@ -742,7 +742,7 @@ app.get('/ventas', authMiddleware, permit(['Administrador','Cajero']), async (re
   const where = {};
   if (startDate && endDate) where.fecha = { [Op.between]: [new Date(startDate), new Date(endDate)] };
   const ventas = await Venta.findAll({ where, include: [Cliente, Vehiculo] });
-  
+
   // Parsear itemsJson para cada venta
   const ventasWithItems = ventas.map(v => {
     const ventaJson = v.toJSON();
@@ -753,7 +753,7 @@ app.get('/ventas', authMiddleware, permit(['Administrador','Cajero']), async (re
     }
     return ventaJson;
   });
-  
+
   res.json(ventasWithItems);
 });
 
@@ -794,6 +794,115 @@ app.get('/reports/productivity', authMiddleware, permit(['Administrador']), asyn
     }
   });
   res.json(Object.values(map));
+});
+
+app.get('/reports/top-products', authMiddleware, permit(['Administrador','Cajero']), async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const where = {};
+    if (startDate && endDate) where.fecha = { [Op.between]: [new Date(startDate), new Date(endDate)] };
+
+    const ventas = await Venta.findAll({ where });
+    const productMap = {};
+
+    ventas.forEach(v => {
+      try {
+        const items = JSON.parse(v.itemsJson || '[]');
+        items.forEach(item => {
+          const productId = item.productId;
+          if (productId) {
+            if (!productMap[productId]) {
+              productMap[productId] = {
+                productId: productId,
+                nombre: item.descripcion || 'Producto',
+                cantidadVendida: 0,
+                ingresoTotal: 0
+              };
+            }
+            productMap[productId].cantidadVendida += item.cantidad || 0;
+            productMap[productId].ingresoTotal += (item.cantidad || 0) * (item.unitPrice || 0);
+          }
+        });
+      } catch (e) {
+        console.error('Error parsing itemsJson:', e);
+      }
+    });
+
+    const topProducts = Object.values(productMap)
+      .sort((a, b) => b.cantidadVendida - a.cantidadVendida)
+      .slice(0, 10);
+
+    res.json(topProducts);
+  } catch (error) {
+    console.error('Error en top-products:', error);
+    res.status(500).json({ error: 'Error al obtener productos más vendidos' });
+  }
+});
+
+app.get('/reports/top-clients', authMiddleware, permit(['Administrador']), async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const where = {};
+    if (startDate && endDate) where.fecha = { [Op.between]: [new Date(startDate), new Date(endDate)] };
+
+    // Obtener órdenes de servicio agrupadas por cliente
+    const ordenes = await Orden.findAll({
+      where: { estatus: 'completada' },
+      include: [Cliente]
+    });
+
+    const clientMap = {};
+
+    ordenes.forEach(o => {
+      if (o.Cliente) {
+        const clientId = o.Cliente.id;
+        if (!clientMap[clientId]) {
+          clientMap[clientId] = {
+            clientId: clientId,
+            nombre: o.Cliente.nombre,
+            telefono: o.Cliente.telefono,
+            correo: o.Cliente.correo,
+            totalServicios: 0,
+            totalGastado: 0
+          };
+        }
+        clientMap[clientId].totalServicios += 1;
+        clientMap[clientId].totalGastado += o.total || 0;
+      }
+    });
+
+    // También contar ventas directas
+    const ventas = await Venta.findAll({
+      where,
+      include: [Cliente]
+    });
+
+    ventas.forEach(v => {
+      if (v.Cliente) {
+        const clientId = v.Cliente.id;
+        if (!clientMap[clientId]) {
+          clientMap[clientId] = {
+            clientId: clientId,
+            nombre: v.Cliente.nombre,
+            telefono: v.Cliente.telefono,
+            correo: v.Cliente.correo,
+            totalServicios: 0,
+            totalGastado: 0
+          };
+        }
+        clientMap[clientId].totalGastado += v.total || 0;
+      }
+    });
+
+    const topClients = Object.values(clientMap)
+      .sort((a, b) => b.totalServicios - a.totalServicios)
+      .slice(0, 10);
+
+    res.json(topClients);
+  } catch (error) {
+    console.error('Error en top-clients:', error);
+    res.status(500).json({ error: 'Error al obtener clientes frecuentes' });
+  }
 });
 
 /* -----------------------------

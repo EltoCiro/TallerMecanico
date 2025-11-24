@@ -25,11 +25,11 @@ export class ApiService {
     let headers = new HttpHeaders({
       'Content-Type': 'application/json'
     });
-    
+
     if (token) {
       headers = headers.set('Authorization', `Bearer ${token}`);
     }
-    
+
     return headers;
   }
 
@@ -95,7 +95,7 @@ export class ApiService {
     // Nota: vehicle puede tener ClienteId o ClientId por inconsistencias del form
     const vehicleAny = vehicle as any;
     const clienteId = vehicleAny.ClientId || vehicle.ClienteId;
-    
+
     const payload = {
       clienteId: clienteId,
       marca: vehicle.marca,
@@ -104,11 +104,11 @@ export class ApiService {
       placas: vehicle.placas,
       vin: vehicle.vin
     };
-    
+
     if (!payload.clienteId) {
       console.error('❌ ERROR: clienteId is missing!', payload);
     }
-    
+
     return this.http.post<Vehicle>(`${this.apiUrl}/vehiculos`, payload, {
       headers: this.getHeaders()
     });
@@ -123,7 +123,7 @@ export class ApiService {
     if (vehicle.anio !== undefined) payload.anio = vehicle.anio;
     if (vehicle.placas !== undefined) payload.placas = vehicle.placas;
     if (vehicle.vin !== undefined) payload.vin = vehicle.vin;
-    
+
     return this.http.put<Vehicle>(`${this.apiUrl}/vehiculos/${id}`, payload, {
       headers: this.getHeaders()
     });
@@ -326,6 +326,26 @@ export class ApiService {
 
   getProductivity(): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/reports/productivity`, {
+      headers: this.getHeaders()
+    });
+  }
+
+  getTopProducts(startDate?: string, endDate?: string): Observable<any[]> {
+    let url = `${this.apiUrl}/reports/top-products`;
+    if (startDate && endDate) {
+      url += `?startDate=${startDate}&endDate=${endDate}`;
+    }
+    return this.http.get<any[]>(url, {
+      headers: this.getHeaders()
+    });
+  }
+
+  getTopClients(startDate?: string, endDate?: string): Observable<any[]> {
+    let url = `${this.apiUrl}/reports/top-clients`;
+    if (startDate && endDate) {
+      url += `?startDate=${startDate}&endDate=${endDate}`;
+    }
+    return this.http.get<any[]>(url, {
       headers: this.getHeaders()
     });
   }

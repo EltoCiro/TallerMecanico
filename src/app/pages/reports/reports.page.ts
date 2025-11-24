@@ -69,7 +69,7 @@ export class ReportsPage implements OnInit {
   topProducts: Product[] = [];
   topClients: Client[] = [];
   lowStockProducts: Product[] = [];
-  
+
   budgetStats = {
     pendientes: 0,
     aprobados: 0,
@@ -126,7 +126,7 @@ export class ReportsPage implements OnInit {
   initializeDates() {
     const today = new Date();
     const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-    
+
     this.dateFrom = firstDay.toISOString().split('T')[0];
     this.dateTo = today.toISOString().split('T')[0];
   }
@@ -136,12 +136,12 @@ export class ReportsPage implements OnInit {
       this.showToast('Por favor selecciona ambas fechas', 'warning');
       return;
     }
-    
+
     if (new Date(this.dateFrom) > new Date(this.dateTo)) {
       this.showToast('La fecha inicial no puede ser mayor a la final', 'warning');
       return;
     }
-    
+
     this.loadStats();
     this.showToast('Filtro aplicado correctamente', 'success');
   }
@@ -205,38 +205,55 @@ export class ReportsPage implements OnInit {
       }
     });
 
-    // Cargar ventas
-    this.apiService.getSales().subscribe({
+    // Cargar ventas con filtro de fechas
+    this.apiService.getSales(this.dateFrom, this.dateTo).subscribe({
       next: (data: any) => {
-        const ventas = data.sales || [];
+        // La API devuelve directamente un array de ventas
+        const ventas = Array.isArray(data) ? data : [];
         this.stats.totalSales = ventas.length;
         this.stats.totalRevenue = ventas.reduce((sum: number, v: any) => sum + (v.total || 0), 0);
+      },
+      error: (error) => {
+        console.error('Error al cargar ventas:', error);
+        this.stats.totalSales = 0;
+        this.stats.totalRevenue = 0;
       }
     });
   }
 
   async loadTopProducts() {
-    this.apiService.getProducts().subscribe({
+    this.apiService.getTopProducts(this.dateFrom, this.dateTo).subscribe({
       next: (products) => {
-        // Simular ventas (en producción deberías obtener esto del backend)
-        this.topProducts = products
-          .sort((a, b) => (b.cantidad || 0) - (a.cantidad || 0))
-          .slice(0, 10);
+        this.topProducts = products.map((p: any) => ({
+          id: p.productId,
+          nombreProducto: p.nombre,
+          sku: p.productId,
+          cantidad: p.cantidadVendida,
+          ingresoTotal: p.ingresoTotal
+        }));
+      },
+      error: (error) => {
+        console.error('Error al cargar productos más vendidos:', error);
+        this.topProducts = [];
       }
     });
   }
 
   async loadTopClients() {
-    this.apiService.getClients().subscribe({
+    this.apiService.getTopClients(this.dateFrom, this.dateTo).subscribe({
       next: (clients) => {
-        // Simular servicios (en producción deberías obtener esto del backend)
-        this.topClients = clients
-          .map((c: any) => ({
-            ...c,
-            totalServicios: Math.floor(Math.random() * 20) + 1 // Simular
-          }))
-          .sort((a: any, b: any) => b.totalServicios - a.totalServicios)
-          .slice(0, 10);
+        this.topClients = clients.map((c: any) => ({
+          id: c.clientId,
+          nombre: c.nombre,
+          telefono: c.telefono,
+          correo: c.correo,
+          totalServicios: c.totalServicios,
+          totalGastado: c.totalGastado
+        }));
+      },
+      error: (error) => {
+        console.error('Error al cargar clientes frecuentes:', error);
+        this.topClients = [];
       }
     });
   }
@@ -244,7 +261,7 @@ export class ReportsPage implements OnInit {
   async loadLowStockProducts() {
     this.apiService.getProducts().subscribe({
       next: (products) => {
-        this.lowStockProducts = products.filter(p => 
+        this.lowStockProducts = products.filter(p =>
           (p.cantidad || 0) <= (p.minStockAlert || 5)
         ).sort((a, b) => (a.cantidad || 0) - (b.cantidad || 0));
       }
@@ -289,9 +306,8 @@ export class ReportsPage implements OnInit {
     window.print();
   }
 
-  getClientServices(client: Client): number {
-    // Por ahora retorna 0, en producción calcularía desde el backend
-    return 0;
+  getClientServices(client: any): number {
+    return client.totalServicios || 0;
   }
 
   private async showToast(message: string, color: string) {

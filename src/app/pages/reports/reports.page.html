@@ -132,7 +132,7 @@
             <div class="stat-box">
               <ion-icon name="trending-up-outline" color="success"></ion-icon>
               <ion-text color="success">
-                <h1>${{ (stats.totalRevenue / (stats.totalSales || 1)).toFixed(0) }}</h1>
+                <h1>${{ stats.totalSales > 0 ? (stats.totalRevenue / stats.totalSales).toFixed(0) : '0' }}</h1>
               </ion-text>
               <p>Ticket Promedio</p>
             </div>
@@ -292,8 +292,8 @@
     <ion-card-content>
       <ion-list *ngIf="lowStockProducts.length > 0">
         <ion-item *ngFor="let product of lowStockProducts" [color]="product.cantidad === 0 ? 'danger' : 'warning'" class="ion-margin-bottom">
-          <ion-icon 
-            [name]="product.cantidad === 0 ? 'alert-circle' : 'warning'" 
+          <ion-icon
+            [name]="product.cantidad === 0 ? 'alert-circle' : 'warning'"
             slot="start">
           </ion-icon>
           <ion-label>
