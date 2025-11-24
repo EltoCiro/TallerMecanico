@@ -36,10 +36,10 @@ import {
   AlertController
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { 
-  closeOutline, 
-  saveOutline, 
-  addOutline, 
+import {
+  closeOutline,
+  saveOutline,
+  addOutline,
   trashOutline,
   personOutline,
   carOutline,
@@ -124,7 +124,7 @@ export class ServiceOrderFormComponent implements OnInit {
   vehicles: Vehicle[] = [];
   vehiclesByClient: Vehicle[] = [];
   currentUser: User | null = null;
-  
+
   // Nueva actividad temporal
   newActivity: Actividad = {
     descripcion: '',
@@ -153,12 +153,12 @@ export class ServiceOrderFormComponent implements OnInit {
   ngOnInit() {
     this.currentUser = this.authService.getCurrentUser();
     this.loadData();
-    
+
     if (this.order) {
       console.log('📋 Orden recibida:', this.order);
       console.log('📋 actividadesJson:', this.order.actividadesJson);
       console.log('📋 actividades directas:', this.order.actividades);
-      
+
       // Parsear actividades correctamente
       let actividades: Actividad[] = [];
       if (this.order.actividadesJson) {
@@ -174,15 +174,15 @@ export class ServiceOrderFormComponent implements OnInit {
         console.log('✅ Actividades desde array directo:', actividades);
       }
 
-      this.formData = { 
+      this.formData = {
         ...this.order,
         actividades: actividades,
         assignedMechanicIds: this.order.Mechanics?.map(m => m.id).filter((id): id is number => id !== undefined) || []
       };
-      
+
       console.log('📝 FormData inicializado:', this.formData);
       console.log('📝 Actividades en formData:', this.formData.actividades);
-      
+
       // Asegurar que ClienteId y VehiculoId se mantengan
       if (this.order.ClienteId) {
         this.formData.ClienteId = this.order.ClienteId;
@@ -190,9 +190,9 @@ export class ServiceOrderFormComponent implements OnInit {
       if (this.order.VehiculoId) {
         this.formData.VehiculoId = this.order.VehiculoId;
       }
-      
+
       this.calculateTotals();
-      
+
       // Cargar vehículos del cliente si existe - con delay para asegurar que clients y vehicles estén cargados
       if (this.formData.ClienteId) {
         setTimeout(() => {
@@ -218,7 +218,7 @@ export class ServiceOrderFormComponent implements OnInit {
         console.error('Error al cargar presupuestos:', error);
       }
     });
-    
+
     // Cargar mecánicos
     this.apiService.getUsers().subscribe({
       next: (data) => {
@@ -258,7 +258,7 @@ export class ServiceOrderFormComponent implements OnInit {
         this.formData.ClienteId = budget.ClienteId;
         this.formData.VehiculoId = budget.VehiculoId;
         this.formData.descripcion = budget.descripcion || '';
-        
+
         // Convertir items del presupuesto a actividades
         const items = budget.itemsJson ? JSON.parse(budget.itemsJson) : budget.items;
         if (items && items.length > 0) {
@@ -295,7 +295,7 @@ export class ServiceOrderFormComponent implements OnInit {
   onClientChange() {
     if (this.formData.ClienteId) {
       this.vehiclesByClient = this.vehicles.filter(v => v.ClienteId === this.formData.ClienteId);
-      
+
       // Si el vehículo seleccionado no pertenece al cliente, limpiarlo
       if (this.formData.VehiculoId) {
         const vehicleExists = this.vehiclesByClient.find(v => v.id === this.formData.VehiculoId);
@@ -324,7 +324,7 @@ export class ServiceOrderFormComponent implements OnInit {
     console.log('💾 Intentando guardar...');
     console.log('💾 FormData actual:', this.formData);
     console.log('💾 Actividades antes de guardar:', this.formData.actividades);
-    
+
     // Validaciones
     if (!this.formData.descripcion?.trim()) {
       await this.showToast('La descripción es requerida', 'warning');
@@ -350,6 +350,9 @@ export class ServiceOrderFormComponent implements OnInit {
       await this.showToast('Debe asignar al menos un mecánico', 'warning');
       return;
     }
+
+    // Eliminar mecánicos duplicados
+    this.formData.assignedMechanicIds = [...new Set(this.formData.assignedMechanicIds)];
 
     // Asegurar que los totales estén calculados
     this.calculateTotals();
@@ -462,7 +465,7 @@ export class ServiceOrderFormComponent implements OnInit {
       activity.fechaInicio = new Date().toISOString();
     } else if (newStatus === 'completada' && !activity.fechaFin) {
       activity.fechaFin = new Date().toISOString();
-      
+
       // Calcular horas reales si hay inicio y fin
       if (activity.fechaInicio) {
         const inicio = new Date(activity.fechaInicio).getTime();

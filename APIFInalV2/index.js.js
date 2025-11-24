@@ -135,8 +135,20 @@ Presupuesto.belongsTo(Vehiculo);
 Presupuesto.hasOne(Orden);
 Orden.belongsTo(Presupuesto);
 
-Orden.belongsToMany(Usuario, { through: 'OrdenMechanics', as: 'Mechanics' });
-Usuario.belongsToMany(Orden, { through: 'OrdenMechanics', as: 'AssignedOrders' });
+// Tabla de unión para Orden y Mecánicos
+// La restricción UNIQUE debe ser sobre la combinación (OrdenId, UsuarioId), no solo UsuarioId
+Orden.belongsToMany(Usuario, {
+  through: 'OrdenMechanics',
+  as: 'Mechanics',
+  foreignKey: 'OrdenId',
+  otherKey: 'UsuarioId'
+});
+Usuario.belongsToMany(Orden, {
+  through: 'OrdenMechanics',
+  as: 'AssignedOrders',
+  foreignKey: 'UsuarioId',
+  otherKey: 'OrdenId'
+});
 
 Producto.hasMany(Movimiento);
 Movimiento.belongsTo(Producto);
@@ -207,7 +219,15 @@ const permit = (allowedRoles = []) => (req, res, next) => {
    SYNC DB + crear admin por defecto
    ----------------------------- */
 (async () => {
-  // No modificar estructura de tablas existentes
+  // Primero, intentar corregir la tabla OrdenMechanics si existe con estructura incorrecta
+  try {
+    await sequelize.query('DROP TABLE IF EXISTS OrdenMechanics;');
+    console.log('✅ Tabla OrdenMechanics eliminada para recreación');
+  } catch (err) {
+    console.log('⚠️ No se pudo eliminar OrdenMechanics (puede no existir)');
+  }
+
+  // No modificar estructura de tablas existentes (excepto OrdenMechanics que acabamos de eliminar)
   await sequelize.sync({ force: false });
 
   // crear admin si no existe
@@ -552,7 +572,9 @@ app.post('/ordenes', authMiddleware, permit(['Administrador','Mecánico','Cajero
     }
 
     if (assignedMechanicIds && Array.isArray(assignedMechanicIds)) {
-      await order.setMechanics(assignedMechanicIds);
+      // Eliminar duplicados del array
+      const uniqueMechanicIds = [...new Set(assignedMechanicIds)];
+      await order.setMechanics(uniqueMechanicIds);
     }
 
     // Devolver con actividades parseadas
@@ -648,7 +670,9 @@ app.put('/ordenes/:id', authMiddleware, permit(['Administrador','Mecánico']), a
     await o.save();
 
     if (assignedMechanicIds && Array.isArray(assignedMechanicIds)) {
-      await o.setMechanics(assignedMechanicIds);
+      // Eliminar duplicados del array
+      const uniqueMechanicIds = [...new Set(assignedMechanicIds)];
+      await o.setMechanics(uniqueMechanicIds);
     }
 
     // Devolver la orden actualizada con actividades parseadas
