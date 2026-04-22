@@ -16,7 +16,7 @@ import { AuthService } from './auth.service';
 })
 export class ApiService {
   // URL del API backend
-  private apiUrl = 'https://8dg69wvv-3000.usw3.devtunnels.ms';
+  private apiUrl = 'https://8hc09qm8-3000.usw3.devtunnels.ms';
 
   constructor(private http: HttpClient, private authService: AuthService) { }
 
