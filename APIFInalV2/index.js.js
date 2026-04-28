@@ -6,6 +6,8 @@
 
 const express = require('express');
 const cors = require('cors');
+// Cargar variables de entorno desde .env en desarrollo
+try { require('dotenv').config(); } catch (e) { /* dotenv may be absent in production */ }
 const { Sequelize, DataTypes, Op } = require('sequelize');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
