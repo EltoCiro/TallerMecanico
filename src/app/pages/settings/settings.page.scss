@@ -12,3 +12,55 @@ ion-card-title ion-icon {
   padding-top: 16px;
   border-top: 1px solid var(--ion-color-light);
 }
+
+// 2FA Setup Styles
+.setup-2fa-section {
+  margin-top: 16px;
+  padding: 16px;
+  background-color: var(--ion-color-light);
+  border-radius: 8px;
+
+  .qr-code-section {
+    text-align: center;
+    margin-bottom: 24px;
+
+    .qr-code-image {
+      max-width: 200px;
+      width: 100%;
+      border: 2px solid var(--ion-color-primary);
+      padding: 8px;
+      border-radius: 4px;
+    }
+  }
+
+  .manual-entry-section {
+    margin-bottom: 24px;
+
+    .manual-code-box {
+      display: flex;
+      align-items: center;
+      background-color: white;
+      border: 1px solid var(--ion-color-medium);
+      border-radius: 4px;
+      padding: 12px;
+      margin-top: 8px;
+
+      .manual-code-text {
+        flex: 1;
+        font-family: monospace;
+        font-size: 16px;
+        font-weight: bold;
+        letter-spacing: 2px;
+        word-break: break-all;
+      }
+
+      ion-button {
+        margin-left: 8px;
+      }
+    }
+  }
+
+  .input-group {
+    margin-bottom: 16px;
+  }
+}

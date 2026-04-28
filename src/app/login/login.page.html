@@ -29,54 +29,169 @@
       </ion-button>
 
       <div class="card-header">
-        <h2 class="card-title">Iniciar Sesión</h2>
-        <p class="card-subtitle">Ingresa tus credenciales para continuar</p>
+        <h2 class="card-title" *ngIf="!requiresTwoFactor && !showSetup2FA">Iniciar Sesión</h2>
+        <h2 class="card-title" *ngIf="requiresTwoFactor && !showSetup2FA">Verificación 2FA</h2>
+        <h2 class="card-title" *ngIf="showSetup2FA">Configurar Autenticación</h2>
+        <p class="card-subtitle" *ngIf="!requiresTwoFactor && !showSetup2FA">Ingresa tus credenciales para continuar</p>
+        <p class="card-subtitle" *ngIf="requiresTwoFactor && !showSetup2FA">Ingresa el código de tu Google Authenticator</p>
+        <p class="card-subtitle" *ngIf="showSetup2FA">Escanea el código QR o ingresa manualmente</p>
       </div>
 
       <div class="form-content">
-        <!-- Input Usuario -->
-        <div class="input-group">
-          <div class="input-icon">
-            <ion-icon name="person-outline"></ion-icon>
+        <!-- ===== PANTALLA DE LOGIN NORMAL ===== -->
+        <div *ngIf="!requiresTwoFactor && !showSetup2FA">
+          <!-- Input Usuario -->
+          <div class="input-group">
+            <div class="input-icon">
+              <ion-icon name="person-outline"></ion-icon>
+            </div>
+            <div class="input-wrapper">
+              <label class="input-label">Email</label>
+              <input 
+                type="email" 
+                class="modern-input"
+                [(ngModel)]="email"
+                [disabled]="loading"
+                placeholder="admin@taller.com">
+            </div>
           </div>
-          <div class="input-wrapper">
-            <label class="input-label">Email</label>
-            <input 
-              type="email" 
-              class="modern-input"
-              [(ngModel)]="email"
-              [disabled]="loading"
-              placeholder="admin@taller.com">
+
+          <!-- Input Password -->
+          <div class="input-group">
+            <div class="input-icon">
+              <ion-icon name="lock-closed-outline"></ion-icon>
+            </div>
+            <div class="input-wrapper">
+              <label class="input-label">Contraseña</label>
+              <input 
+                type="password" 
+                class="modern-input"
+                [(ngModel)]="password"
+                [disabled]="loading"
+                (keyup.enter)="login()"
+                placeholder="••••••••">
+            </div>
           </div>
+
+          <!-- Botón Login -->
+          <ion-button 
+            expand="block" 
+            class="btn-gradient login-btn"
+            (click)="login()"
+            [disabled]="loading">
+            <ion-icon name="log-in-outline" slot="start" *ngIf="!loading"></ion-icon>
+            <span *ngIf="!loading">Ingresar al Sistema</span>
+            <ion-spinner *ngIf="loading" name="crescent"></ion-spinner>
+          </ion-button>
         </div>
 
-        <!-- Input Password -->
-        <div class="input-group">
-          <div class="input-icon">
-            <ion-icon name="lock-closed-outline"></ion-icon>
+        <!-- ===== PANTALLA DE VERIFICACIÓN 2FA ===== -->
+        <div *ngIf="requiresTwoFactor && !showSetup2FA" class="twofa-section">
+          <div class="twofa-header">
+            <ion-icon name="shield-checkmark-outline" class="twofa-icon"></ion-icon>
+            <p class="twofa-instruction">Abre tu aplicación Google Authenticator y busca el código para <strong>TallerMecanico</strong></p>
           </div>
-          <div class="input-wrapper">
-            <label class="input-label">Contraseña</label>
-            <input 
-              type="password" 
-              class="modern-input"
-              [(ngModel)]="password"
-              [disabled]="loading"
-              (keyup.enter)="login()"
-              placeholder="••••••••">
+
+          <!-- Input 2FA Code -->
+          <div class="input-group">
+            <div class="input-icon">
+              <ion-icon name="lock-closed-outline"></ion-icon>
+            </div>
+            <div class="input-wrapper">
+              <label class="input-label">Código de 6 dígitos</label>
+              <input 
+                type="text" 
+                class="modern-input code-input"
+                [(ngModel)]="twoFactorCode"
+                [disabled]="loading"
+                (keyup.enter)="submit2FA()"
+                maxlength="6"
+                placeholder="000000"
+                inputmode="numeric">
+            </div>
           </div>
+
+          <!-- Botones 2FA -->
+          <ion-button 
+            expand="block" 
+            class="btn-gradient"
+            (click)="submit2FA()"
+            [disabled]="loading || twoFactorCode.length !== 6">
+            <ion-icon name="checkmark-outline" slot="start" *ngIf="!loading"></ion-icon>
+            <span *ngIf="!loading">Verificar Código</span>
+            <ion-spinner *ngIf="loading" name="crescent"></ion-spinner>
+          </ion-button>
+
+          <ion-button 
+            expand="block" 
+            fill="outline"
+            class="btn-outline"
+            (click)="cancel2FALogin()"
+            [disabled]="loading">
+            <ion-icon name="close-outline" slot="start"></ion-icon>
+            Cancelar
+          </ion-button>
         </div>
 
-        <!-- Botón Login -->
-        <ion-button 
-          expand="block" 
-          class="btn-gradient login-btn"
-          (click)="login()"
-          [disabled]="loading">
-          <ion-icon name="log-in-outline" slot="start" *ngIf="!loading"></ion-icon>
-          <span *ngIf="!loading">Ingresar al Sistema</span>
-          <ion-spinner *ngIf="loading" name="crescent"></ion-spinner>
-        </ion-button>
+        <!-- ===== PANTALLA DE SETUP 2FA ===== -->
+        <div *ngIf="showSetup2FA" class="twofa-setup-section">
+          <!-- QR Code -->
+          <div class="qr-container" *ngIf="qrCodeImageUrl">
+            <img [src]="qrCodeImageUrl" alt="QR Code" class="qr-code">
+            <p class="qr-label">Escanea con Google Authenticator</p>
+          </div>
+
+          <!-- Manual Entry -->
+          <div *ngIf="manualEntry" class="manual-entry-section">
+            <p class="manual-label">O ingresa este código manualmente en tu autenticador:</p>
+            <div class="manual-code-box">
+              <code class="manual-code-text">{{ manualEntry }}</code>
+              <ion-button fill="clear" size="small" (click)="copyToClipboard(manualEntry)">
+                <ion-icon name="copy-outline"></ion-icon>
+              </ion-button>
+            </div>
+          </div>
+
+          <!-- Input Verification Code -->
+          <div class="input-group">
+            <div class="input-icon">
+              <ion-icon name="lock-closed-outline"></ion-icon>
+            </div>
+            <div class="input-wrapper">
+              <label class="input-label">Ingresa el código para confirmar</label>
+              <input 
+                type="text" 
+                class="modern-input code-input"
+                [(ngModel)]="setupTokenCode"
+                [disabled]="loading"
+                (keyup.enter)="verify2FA()"
+                maxlength="6"
+                placeholder="000000"
+                inputmode="numeric">
+            </div>
+          </div>
+
+          <!-- Botones Setup -->
+          <ion-button 
+            expand="block" 
+            class="btn-gradient"
+            (click)="verify2FA()"
+            [disabled]="loading || setupTokenCode.length !== 6">
+            <ion-icon name="checkmark-outline" slot="start" *ngIf="!loading"></ion-icon>
+            <span *ngIf="!loading">Activar 2FA</span>
+            <ion-spinner *ngIf="loading" name="crescent"></ion-spinner>
+          </ion-button>
+
+          <ion-button 
+            expand="block" 
+            fill="outline"
+            class="btn-outline"
+            (click)="cancel2FASetup()"
+            [disabled]="loading">
+            <ion-icon name="close-outline" slot="start"></ion-icon>
+            Cancelar
+          </ion-button>
+        </div>
 
         <!-- Panel de Configuración -->
         <div *ngIf="showConfig" class="config-panel animate-fade-in">
@@ -114,17 +229,17 @@
       <div class="card-footer">
         <p class="version-text">
           <ion-icon name="shield-checkmark-outline"></ion-icon>
-          Sistema de Control v1.0
+          Sistema de Control v1.0 + 2FA
         </p>
       </div>
     </div>
 
     <!-- Credenciales de prueba (solo desarrollo) -->
-    <div class="dev-credentials animate-fade-in">
+    <div class="dev-credentials animate-fade-in" *ngIf="!requiresTwoFactor && !showSetup2FA">
       <ion-text color="medium">
         <p class="text-sm">
           <ion-icon name="information-circle-outline"></ion-icon>
-          <strong>Credenciales de prueba:</strong> admin / 123456
+          <strong>Credenciales de prueba:</strong> admin@taller.com / admin123
         </p>
       </ion-text>
     </div>
