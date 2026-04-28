@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: apifinalv2
+    env: node
+    region: oregon
+    branch: main
+    root: APIFInalV2
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: PGSSLMODE
+        value: require
+      - key: DB_SSL
+        value: 'true'
+    healthCheckPath: /

@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 import { User, LoginResponse } from '../models/user.model';
 import { Client } from '../models/client.model';
 import { Vehicle } from '../models/vehicle.model';
@@ -15,8 +16,8 @@ import { AuthService } from './auth.service';
   providedIn: 'root'
 })
 export class ApiService {
-  // URL del API backend
-  private apiUrl = 'https://8hc09qm8-3000.usw3.devtunnels.ms';
+  // URL del API backend (usa environment.apiUrl en dev)
+  private apiUrl = environment.apiUrl || 'http://localhost:3000';
 
   constructor(private http: HttpClient, private authService: AuthService) { }
 
