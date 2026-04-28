@@ -19,7 +19,9 @@ export class ApiService {
   // URL del API backend (usa environment.apiUrl en dev)
   private apiUrl = environment.apiUrl || 'http://localhost:3000';
 
-  constructor(private http: HttpClient, private authService: AuthService) { }
+  constructor(private http: HttpClient, private authService: AuthService) {
+    this.loadApiUrl();
+  }
 
   private getHeaders(): HttpHeaders {
     const token = this.authService.getToken();
@@ -45,6 +47,48 @@ export class ApiService {
     return this.http.post(`${this.apiUrl}/usuarios`, user, {
       headers: this.getHeaders()
     });
+  }
+
+  // ==================== 2FA CON GOOGLE AUTHENTICATOR ====================
+  setup2FA(): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/auth/setup-2fa`, {}, {
+      headers: this.getHeaders()
+    });
+  }
+
+  verify2FA(secret: string, token: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/auth/verify-2fa`, { secret, token }, {
+      headers: this.getHeaders()
+    });
+  }
+
+  login2FA(userId: number, token: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/auth/login-2fa`, { userId, token }, {
+      headers: new HttpHeaders({ 'Content-Type': 'application/json' })
+    });
+  }
+
+  disable2FA(): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/auth/disable-2fa`, {}, {
+      headers: this.getHeaders()
+    });
+  }
+
+  // ==================== API URL MANAGEMENT ====================
+  getApiUrl(): string {
+    return this.apiUrl;
+  }
+
+  setApiUrl(url: string): void {
+    this.apiUrl = url;
+    localStorage.setItem('apiUrl', url);
+  }
+
+  loadApiUrl(): void {
+    const savedUrl = localStorage.getItem('apiUrl');
+    if (savedUrl) {
+      this.apiUrl = savedUrl;
+    }
   }
 
   // ==================== CLIENTS ====================

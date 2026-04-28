@@ -11,6 +11,8 @@ try { require('dotenv').config(); } catch (e) { /* dotenv may be absent in produ
 const { Sequelize, DataTypes, Op } = require('sequelize');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const speakeasy = require('speakeasy');
+const QRCode = require('qrcode');
 
 const app = express();
 app.use(cors());
@@ -51,7 +53,10 @@ const Usuario = sequelize.define('Usuario', {
   nombre: { type: DataTypes.STRING, allowNull: false },
   email: { type: DataTypes.STRING, unique: true, allowNull: false, validate: { isEmail: true } },
   password: { type: DataTypes.STRING, allowNull: false },
-  rol: { type: DataTypes.ENUM('Administrador', 'Mecánico', 'Cajero'), allowNull: false }
+  rol: { type: DataTypes.ENUM('Administrador', 'Mecánico', 'Cajero'), allowNull: false },
+  // ⭐ CAMPOS PARA 2FA CON GOOGLE AUTHENTICATOR
+  twoFactorSecret: { type: DataTypes.STRING, allowNull: true },
+  twoFactorEnabled: { type: DataTypes.BOOLEAN, defaultValue: false }
 });
 
 // Clientes
@@ -264,6 +269,133 @@ const permit = (allowedRoles = []) => (req, res, next) => {
    RUTAS - AUTH
    ----------------------------- */
 
+/* ===== ENDPOINTS 2FA CON GOOGLE AUTHENTICATOR ===== */
+
+// 1. Generar código QR para configurar 2FA
+app.post('/auth/setup-2fa', authMiddleware, async (req, res) => {
+  try {
+    const user = req.user;
+    
+    // Generar secreto TOTP (similar a GitHub: "TallerMecanico (NombreUsuario)")
+    const secret = speakeasy.generateSecret({
+      name: `TallerMecanico (${user.nombre})`,
+      issuer: 'TallerMecanico',
+      length: 32
+    });
+    
+    // Generar QR code en formato de imagen
+    const qrCode = await QRCode.toDataURL(secret.otpauth_url);
+    
+    res.json({
+      secret: secret.base32, // String que se puede ingresar manualmente
+      qrCode: qrCode, // Imagen base64 del QR
+      message: 'Escanea con Google Authenticator. Si no puedes, ingresa este código manualmente:',
+      manualEntry: secret.base32
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error generando 2FA' });
+  }
+});
+
+// 2. Verificar código TOTP y activar 2FA
+app.post('/auth/verify-2fa', authMiddleware, async (req, res) => {
+  try {
+    const { secret, token } = req.body;
+    const user = req.user;
+    
+    if (!secret || !token) {
+      return res.status(400).json({ error: 'Secret y token requeridos' });
+    }
+    
+    // Verificar que el código TOTP sea válido
+    const verified = speakeasy.totp.verify({
+      secret: secret,
+      encoding: 'base32',
+      token: token,
+      window: 2 // Permite 30 segundos de tolerancia en cada dirección
+    });
+    
+    if (!verified) {
+      return res.status(400).json({ error: 'Código incorrecto' });
+    }
+    
+    // Guardar el secreto en la base de datos y activar 2FA
+    await user.update({
+      twoFactorSecret: secret,
+      twoFactorEnabled: true
+    });
+    
+    res.json({ 
+      message: '2FA activado exitosamente',
+      success: true 
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error verificando 2FA' });
+  }
+});
+
+// 3. Login con 2FA (segundo paso después del login inicial)
+app.post('/auth/login-2fa', async (req, res) => {
+  try {
+    const { userId, token } = req.body;
+    
+    if (!userId || !token) {
+      return res.status(400).json({ error: 'userId y token requeridos' });
+    }
+    
+    const user = await Usuario.findByPk(userId);
+    if (!user) return res.status(400).json({ error: 'Usuario no encontrado' });
+    
+    if (!user.twoFactorEnabled || !user.twoFactorSecret) {
+      return res.status(400).json({ error: '2FA no está habilitado' });
+    }
+    
+    // Verificar el código TOTP
+    const verified = speakeasy.totp.verify({
+      secret: user.twoFactorSecret,
+      encoding: 'base32',
+      token: token,
+      window: 2
+    });
+    
+    if (!verified) {
+      return res.status(401).json({ error: 'Código 2FA incorrecto' });
+    }
+    
+    // Generar token JWT
+    const jwtToken = generateToken(user);
+    res.json({ 
+      token: jwtToken,
+      user: { id: user.id, nombre: user.nombre, email: user.email, rol: user.rol },
+      message: 'Autenticación exitosa'
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error en 2FA login' });
+  }
+});
+
+// 4. Desactivar 2FA
+app.post('/auth/disable-2fa', authMiddleware, async (req, res) => {
+  try {
+    const user = req.user;
+    
+    await user.update({
+      twoFactorSecret: null,
+      twoFactorEnabled: false
+    });
+    
+    res.json({ message: '2FA desactivado' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error desactivando 2FA' });
+  }
+});
+
+/* ===== RUTAS AUTH ADICIONALES ===== */
+
 // Registro público -> crea cliente o usuario según tipoRequest
 // Here: public registration creates CLIENTE account (not employee)
 app.post('/auth/register-client', async (req, res) => {
@@ -278,7 +410,7 @@ app.post('/auth/register-client', async (req, res) => {
   }
 });
 
-// Login (email + password) -> retorna token y rol
+// Login (email + password) -> si 2FA está habilitado, pide código
 app.post('/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -287,8 +419,23 @@ app.post('/auth/login', async (req, res) => {
     if (!user) return res.status(400).json({ error: 'Usuario no encontrado' });
     const ok = await bcrypt.compare(password, user.password);
     if (!ok) return res.status(400).json({ error: 'Contraseña incorrecta' });
+    
+    // Si 2FA está habilitado, pedir código TOTP
+    if (user.twoFactorEnabled) {
+      return res.json({ 
+        requiresTwoFactor: true, 
+        userId: user.id,
+        message: 'Ingresa tu código de 6 dígitos de Google Authenticator'
+      });
+    }
+    
+    // Si no tiene 2FA, generar token directamente
     const token = generateToken(user);
-    res.json({ token, user: { id: user.id, nombre: user.nombre, email: user.email, rol: user.rol }});
+    res.json({ 
+      token, 
+      user: { id: user.id, nombre: user.nombre, email: user.email, rol: user.rol },
+      requiresTwoFactor: false
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Error en login' });

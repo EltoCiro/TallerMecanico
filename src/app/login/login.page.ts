@@ -18,10 +18,13 @@ import {
   IonIcon,
   IonText,
   IonSpinner,
-  ToastController
+  ToastController,
+  IonGrid,
+  IonRow,
+  IonCol
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { logInOutline, personOutline, lockClosedOutline, settingsOutline } from 'ionicons/icons';
+import { logInOutline, personOutline, lockClosedOutline, settingsOutline, closeOutline, shieldCheckmarkOutline } from 'ionicons/icons';
 import { ApiService } from '../services/api.service';
 import { AuthService } from '../services/auth.service';
 
@@ -46,15 +49,28 @@ import { AuthService } from '../services/auth.service';
     IonButton,
     IonIcon,
     IonText,
-    IonSpinner
+    IonSpinner,
+    IonGrid,
+    IonRow,
+    IonCol
   ]
 })
 export class LoginPage implements OnInit {
+  // Login básico
   email = '';
   password = '';
   loading = false;
   showConfig = false;
   apiUrl = '';
+
+  // 2FA
+  requiresTwoFactor = false;
+  tempUserId: number | null = null;
+  twoFactorCode = '';
+  showSetup2FA = false;
+  qrCodeImageUrl: string | null = null;
+  manualEntry: string | null = null;
+  setupTokenCode = '';
 
   constructor(
     private apiService: ApiService,
@@ -62,11 +78,111 @@ export class LoginPage implements OnInit {
     private router: Router,
     private toastController: ToastController
   ) {
-    addIcons({ logInOutline, personOutline, lockClosedOutline, settingsOutline });
+    addIcons({ logInOutline, personOutline, lockClosedOutline, settingsOutline, closeOutline, shieldCheckmarkOutline });
   }
 
   ngOnInit() {
     this.apiUrl = this.apiService.getApiUrl();
+  }
+
+  // Enviar código 2FA
+  async submit2FA() {
+    if (!this.twoFactorCode || this.twoFactorCode.length !== 6) {
+      await this.showToast('Ingresa un código válido de 6 dígitos', 'warning');
+      return;
+    }
+
+    if (!this.tempUserId) {
+      await this.showToast('Sesión inválida', 'danger');
+      return;
+    }
+
+    this.loading = true;
+    this.apiService.login2FA(this.tempUserId, this.twoFactorCode).subscribe({
+      next: async (response) => {
+        console.log('2FA success:', response);
+        this.loading = false;
+        this.authService.login(response);
+        await this.showToast('Autenticación exitosa', 'success');
+        await this.router.navigate(['/tabs/home']);
+      },
+      error: async (error) => {
+        console.error('2FA error:', error);
+        this.loading = false;
+        await this.showToast('Código 2FA incorrecto', 'danger');
+      }
+    });
+  }
+
+  // Configurar 2FA
+  async setup2FA() {
+    if (!this.authService.isAuthenticated()) {
+      await this.showToast('Debes estar autenticado', 'warning');
+      return;
+    }
+
+    this.loading = true;
+    this.apiService.setup2FA().subscribe({
+      next: async (response) => {
+        console.log('2FA setup:', response);
+        this.loading = false;
+        this.qrCodeImageUrl = response.qrCode;
+        this.manualEntry = response.manualEntry;
+        this.showSetup2FA = true;
+        await this.showToast('Escanea el código QR con Google Authenticator', 'info');
+      },
+      error: async (error) => {
+        console.error('Setup 2FA error:', error);
+        this.loading = false;
+        await this.showToast('Error generando 2FA: ' + (error.error?.error || 'Error'), 'danger');
+      }
+    });
+  }
+
+  // Verificar y activar 2FA
+  async verify2FA() {
+    if (!this.setupTokenCode || this.setupTokenCode.length !== 6) {
+      await this.showToast('Ingresa un código válido de 6 dígitos', 'warning');
+      return;
+    }
+
+    if (!this.manualEntry) {
+      await this.showToast('Falta el secreto para verificar', 'danger');
+      return;
+    }
+
+    this.loading = true;
+    this.apiService.verify2FA(this.manualEntry, this.setupTokenCode).subscribe({
+      next: async (response) => {
+        console.log('2FA verified:', response);
+        this.loading = false;
+        this.showSetup2FA = false;
+        this.qrCodeImageUrl = null;
+        this.manualEntry = null;
+        this.setupTokenCode = '';
+        await this.showToast('2FA activado exitosamente', 'success');
+      },
+      error: async (error) => {
+        console.error('Verify 2FA error:', error);
+        this.loading = false;
+        await this.showToast('Código incorrecto: ' + (error.error?.error || 'Error'), 'danger');
+      }
+    });
+  }
+
+  // Cancelar setup 2FA
+  cancel2FASetup() {
+    this.showSetup2FA = false;
+    this.qrCodeImageUrl = null;
+    this.manualEntry = null;
+    this.setupTokenCode = '';
+  }
+
+  // Cancelar login 2FA
+  cancel2FALogin() {
+    this.requiresTwoFactor = false;
+    this.tempUserId = null;
+    this.twoFactorCode = '';
   }
 
   async login() {
@@ -81,12 +197,17 @@ export class LoginPage implements OnInit {
         console.log('Login response:', response);
         this.loading = false;
         
-        // El backend devuelve { id, nombre, rol } directamente
+        // Si requiere 2FA
+        if (response.requiresTwoFactor) {
+          this.requiresTwoFactor = true;
+          this.tempUserId = response.userId;
+          await this.showToast('Por favor ingresa tu código de 2FA', 'info');
+          return;
+        }
+        
+        // Login exitoso sin 2FA
         this.authService.login(response);
-        
-        await this.showToast('Bienvenido ' + response.nombre, 'success');
-        
-        // Navegar a tabs/home
+        await this.showToast('Bienvenido ' + response.user.nombre, 'success');
         await this.router.navigate(['/tabs/home']);
       },
       error: async (error) => {
@@ -119,3 +240,15 @@ export class LoginPage implements OnInit {
     await toast.present();
   }
 }
+  
+  // Copiar código al portapapeles
+  async copyToClipboard(text: string | null) {
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      await this.showToast('Código copiado al portapapeles', 'success');
+    } catch (err) {
+      console.error('Error copying:', err);
+      await this.showToast('Error al copiar', 'danger');
+    }
+  }

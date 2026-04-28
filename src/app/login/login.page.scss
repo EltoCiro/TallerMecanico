@@ -436,3 +436,119 @@
     }
   }
 }
+
+/* ===== ESTILOS PARA 2FA ===== */
+
+.twofa-section,
+.twofa-setup-section {
+  animation: slideIn 0.3s ease-out;
+}
+
+.twofa-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  padding: 1rem 0;
+  border-bottom: 2px solid var(--ion-color-primary, #0066ff);
+  
+  .twofa-icon {
+    font-size: 2.5rem;
+    color: var(--ion-color-success, #2dd36f);
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+
+  .twofa-instruction {
+    color: var(--ion-text-color, #000);
+    font-size: 0.95rem;
+    margin: 0;
+    
+    strong {
+      color: var(--ion-color-primary, #0066ff);
+      font-weight: 600;
+    }
+  }
+}
+
+.twofa-setup-section {
+  text-align: center;
+}
+
+.qr-container {
+  background: white;
+  border: 2px solid var(--ion-color-light, #f4f4f4);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+  .qr-code {
+    max-width: 200px;
+    width: 100%;
+    height: auto;
+    margin-bottom: 0.5rem;
+  }
+
+  .qr-label {
+    font-size: 0.85rem;
+    color: var(--ion-color-medium, #999);
+    margin: 0;
+  }
+}
+
+.manual-entry-section {
+  margin-bottom: 1.5rem;
+
+  .manual-label {
+    font-size: 0.9rem;
+    color: var(--ion-text-color, #000);
+    margin-bottom: 0.75rem;
+  }
+
+  .manual-code-box {
+    background: #f9f9f9;
+    border: 1px dashed var(--ion-color-primary, #0066ff);
+    border-radius: 6px;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+
+    .manual-code-text {
+      font-family: 'Courier New', monospace;
+      font-size: 1.1rem;
+      font-weight: bold;
+      letter-spacing: 2px;
+      color: var(--ion-color-primary, #0066ff);
+      flex: 1;
+      word-break: break-all;
+    }
+
+    ion-button {
+      flex-shrink: 0;
+    }
+  }
+}
+
+.code-input {
+  font-size: 1.2rem;
+  letter-spacing: 4px;
+  text-align: center;
+  font-weight: 500;
+  font-family: 'Courier New', monospace;
+  
+  &::placeholder {
+    letter-spacing: 4px;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
