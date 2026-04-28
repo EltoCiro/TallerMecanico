@@ -33,6 +33,113 @@
     <ion-card-header>
       <ion-card-title>
         <ion-icon name="link-outline"></ion-icon>
+        Autenticación de Dos Factores (2FA)
+      </ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-list>
+        <ion-item>
+          <ion-label>
+            <h2>Estado 2FA</h2>
+            <p *ngIf="currentUser?.twoFactorEnabled">
+              <ion-icon name="checkmark-circle" style="color: green;"></ion-icon>
+              Activado
+            </p>
+            <p *ngIf="!currentUser?.twoFactorEnabled">
+              <ion-icon name="close-circle" style="color: red;"></ion-icon>
+              Desactivado
+            </p>
+          </ion-label>
+        </ion-item>
+      </ion-list>
+
+      <!-- Botón para activar 2FA -->
+      <ion-button 
+        *ngIf="!currentUser?.twoFactorEnabled && !show2FASetup"
+        expand="block" 
+        (click)="start2FASetup()"
+        [disabled]="loading">
+        <ion-icon name="shield-checkmark-outline" slot="start"></ion-icon>
+        Activar 2FA
+      </ion-button>
+
+      <!-- Botón para desactivar 2FA -->
+      <ion-button 
+        *ngIf="currentUser?.twoFactorEnabled"
+        expand="block" 
+        color="danger"
+        (click)="disable2FA()"
+        [disabled]="loading">
+        <ion-icon name="close-circle-outline" slot="start"></ion-icon>
+        Desactivar 2FA
+      </ion-button>
+
+      <!-- Setup Modal -->
+      <div *ngIf="show2FASetup" class="setup-2fa-section">
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>Configurar 2FA</ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            <!-- QR Code -->
+            <div *ngIf="qrCodeImageUrl" class="qr-code-section">
+              <p><strong>1. Escanea este código QR con Google Authenticator:</strong></p>
+              <img [src]="qrCodeImageUrl" alt="QR Code" class="qr-code-image">
+            </div>
+
+            <!-- Manual Entry -->
+            <div *ngIf="manualEntry" class="manual-entry-section">
+              <p><strong>2. O ingresa este código manualmente:</strong></p>
+              <div class="manual-code-box">
+                <code class="manual-code-text">{{ manualEntry }}</code>
+                <ion-button fill="clear" size="small" (click)="copyToClipboard(manualEntry)">
+                  <ion-icon name="copy-outline"></ion-icon>
+                </ion-button>
+              </div>
+            </div>
+
+            <!-- Verification Code Input -->
+            <div class="input-group ion-margin-top">
+              <p><strong>3. Ingresa el código de 6 dígitos:</strong></p>
+              <ion-item>
+                <ion-label position="floating">Código de Verificación</ion-label>
+                <ion-input 
+                  [(ngModel)]="setupTokenCode"
+                  type="text"
+                  inputmode="numeric"
+                  maxlength="6"
+                  placeholder="000000">
+                </ion-input>
+              </ion-item>
+            </div>
+
+            <!-- Buttons -->
+            <div class="ion-margin-top">
+              <ion-button 
+                expand="block"
+                (click)="verify2FA()"
+                [disabled]="loading || !setupTokenCode">
+                <ion-icon name="checkmark" slot="start"></ion-icon>
+                Verificar y Activar
+              </ion-button>
+              <ion-button 
+                expand="block"
+                fill="outline"
+                (click)="cancel2FASetup()"
+                [disabled]="loading">
+                Cancelar
+              </ion-button>
+            </div>
+          </ion-card-content>
+        </ion-card>
+      </div>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>
+        <ion-icon name="link-outline"></ion-icon>
         Configuración de API
       </ion-card-title>
     </ion-card-header>

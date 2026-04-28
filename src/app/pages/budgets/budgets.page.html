@@ -120,7 +120,7 @@
             </div>
             <div class="total-row" *ngIf="budget.descuento && budget.descuento > 0">
               <span>Descuento:</span>
-              <strong class="discount">-${{ budget.descuento?.toFixed(2) }}</strong>
+              <strong class="discount">-${{ budget.descuento.toFixed(2) }}</strong>
             </div>
             <div class="total-row total-final">
               <span>TOTAL:</span>

@@ -414,17 +414,4 @@ export class ApiService {
     });
   }
 
-  // ==================== CONFIG ====================
-  setApiUrl(url: string): void {
-    this.apiUrl = url;
-    localStorage.setItem('apiUrl', url);
-  }
-
-  getApiUrl(): string {
-    const savedUrl = localStorage.getItem('apiUrl');
-    if (savedUrl) {
-      this.apiUrl = savedUrl;
-    }
-    return this.apiUrl;
-  }
 }

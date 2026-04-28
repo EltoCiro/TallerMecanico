@@ -239,8 +239,7 @@ export class LoginPage implements OnInit {
     });
     await toast.present();
   }
-}
-  
+
   // Copiar código al portapapeles
   async copyToClipboard(text: string | null) {
     if (!text) return;
@@ -252,3 +251,4 @@ export class LoginPage implements OnInit {
       await this.showToast('Error al copiar', 'danger');
     }
   }
+}
