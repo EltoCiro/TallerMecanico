@@ -1,6 +1,6 @@
 // index.js - API completa (único archivo) - Taller Mecánico
 // Dependencias:
-// npm install express cors sequelize sqlite3 bcryptjs jsonwebtoken
+// npm install express cors sequelize pg pg-hstore bcryptjs jsonwebtoken
 // Ejecutar:
 // node index.js
 
@@ -20,10 +20,24 @@ app.use(express.json());
 const JWT_SECRET = process.env.JWT_SECRET || 'CAMBIA_POR_UN_SECRETO_MUY_FUERTE';
 const PORT = process.env.PORT || 3000;
 
-const sequelize = new Sequelize({
-  dialect: 'sqlite',
-  storage: 'taller.db',
+const DATABASE_URL = process.env.DATABASE_URL;
+if (!DATABASE_URL) {
+  console.error('Falta DATABASE_URL. Configura la conexion a PostgreSQL.');
+  process.exit(1);
+}
+
+const useSsl = process.env.DB_SSL === 'true' || process.env.PGSSLMODE === 'require';
+const sequelize = new Sequelize(DATABASE_URL, {
+  dialect: 'postgres',
   logging: false,
+  dialectOptions: useSsl
+    ? {
+        ssl: {
+          require: true,
+          rejectUnauthorized: false
+        }
+      }
+    : undefined
 });
 
 /* -----------------------------
