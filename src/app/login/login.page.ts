@@ -122,8 +122,8 @@ export class LoginPage implements OnInit {
     }
 
     this.loading = true;
-    this.apiService.setup2FA().subscribe({
-      next: async (response) => {
+    this.apiService.enable2FA().subscribe({
+      next: async (response: any) => {
         console.log('2FA setup:', response);
         this.loading = false;
         this.qrCodeImageUrl = response.qrCode;
@@ -131,7 +131,7 @@ export class LoginPage implements OnInit {
         this.showSetup2FA = true;
         await this.showToast('Escanea el código QR con Google Authenticator', 'info');
       },
-      error: async (error) => {
+      error: async (error: any) => {
         console.error('Setup 2FA error:', error);
         this.loading = false;
         await this.showToast('Error generando 2FA: ' + (error.error?.error || 'Error'), 'danger');
@@ -152,8 +152,8 @@ export class LoginPage implements OnInit {
     }
 
     this.loading = true;
-    this.apiService.verify2FA(this.manualEntry, this.setupTokenCode).subscribe({
-      next: async (response) => {
+    this.apiService.verify2FASetup(this.manualEntry, this.setupTokenCode).subscribe({
+      next: async (response: any) => {
         console.log('2FA verified:', response);
         this.loading = false;
         this.showSetup2FA = false;
@@ -162,7 +162,7 @@ export class LoginPage implements OnInit {
         this.setupTokenCode = '';
         await this.showToast('2FA activado exitosamente', 'success');
       },
-      error: async (error) => {
+      error: async (error: any) => {
         console.error('Verify 2FA error:', error);
         this.loading = false;
         await this.showToast('Código incorrecto: ' + (error.error?.error || 'Error'), 'danger');

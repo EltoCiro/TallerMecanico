@@ -21,9 +21,9 @@
             [color]="twoFAEnabled ? 'success' : 'medium'">
           </ion-icon>
           <div class="status-text">
-            <h3>Estado: <strong [color]="twoFAEnabled ? 'success' : 'medium'">
-              {{ twoFAEnabled ? 'HABILITADO' : 'DESHABILITADO' }}
-            </strong></h3>
+            <h3>Estado: <ion-text [color]="twoFAEnabled ? 'success' : 'medium'">
+              <strong>{{ twoFAEnabled ? 'HABILITADO' : 'DESHABILITADO' }}</strong>
+            </ion-text></h3>
             <p>
               {{ twoFAEnabled 
                 ? 'Tu cuenta está protegida con 2FA' 

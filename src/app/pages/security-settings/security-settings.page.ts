@@ -30,7 +30,7 @@ import {
   addCircleOutline, 
   closeCircleOutline,
   shieldCheckmarkOutline,
-  shieldCloseOutline
+  shieldOutline
 } from 'ionicons/icons';
 
 @Component({
@@ -76,7 +76,7 @@ export class SecuritySettingsPage implements OnInit {
     private alertController: AlertController,
     private toastController: ToastController
   ) {
-    addIcons({ addCircleOutline, closeCircleOutline, shieldCheckmarkOutline, shieldCloseOutline });
+    addIcons({ addCircleOutline, closeCircleOutline, shieldCheckmarkOutline, shieldOutline });
   }
 
   ngOnInit() {

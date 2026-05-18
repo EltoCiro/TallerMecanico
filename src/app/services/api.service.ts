@@ -437,13 +437,6 @@ export class ApiService {
     });
   }
 
-  // ==================== USERS ====================
-  getUsers(): Observable<User[]> {
-    return this.http.get<User[]>(`${this.apiUrl}/usuarios`, {
-      headers: this.getHeaders()
-    });
-  }
-
   updateUser(id: number, user: Partial<User>): Observable<any> {
     return this.http.put(`${this.apiUrl}/usuarios/${id}`, user, {
       headers: this.getHeaders()
