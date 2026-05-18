@@ -18,7 +18,8 @@ import {
   personOutline,
   cartOutline,
   statsChartOutline,
-  settingsOutline
+  settingsOutline,
+  readerOutline
 } from 'ionicons/icons';
 import { AuthService } from '../services/auth.service';
 
@@ -51,7 +52,8 @@ export class TabsPage implements OnInit {
       personOutline,
       cartOutline,
       statsChartOutline,
-      settingsOutline
+      settingsOutline,
+      readerOutline
     });
   }
 

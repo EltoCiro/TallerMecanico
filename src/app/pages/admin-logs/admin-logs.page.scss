@@ -1,0 +1,138 @@
+.filters-card {
+  margin: 16px;
+  ion-item {
+    --padding-start: 0;
+    --padding-end: 0;
+  }
+}
+
+.summary-card {
+  margin: 16px;
+  
+  .summary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+
+    @media (max-width: 600px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .summary-section {
+    h3 {
+      margin: 0 0 12px 0;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ion-color-primary);
+    }
+
+    ion-list {
+      padding: 0;
+    }
+
+    ion-item {
+      --padding-start: 0;
+      --padding-end: 0;
+      --border-color: transparent;
+      
+      ion-label {
+        margin: 8px 0;
+        
+        strong {
+          font-size: 12px;
+        }
+
+        p {
+          margin: 4px 0 0 0;
+          font-size: 11px;
+          color: var(--ion-color-medium);
+        }
+      }
+    }
+  }
+}
+
+.logs-card {
+  margin: 16px;
+
+  ion-card-header {
+    position: relative;
+  }
+
+  .log-entry {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--ion-color-light);
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    .log-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+
+      .log-user {
+        font-weight: 600;
+        font-size: 14px;
+      }
+
+      ion-badge {
+        font-size: 11px;
+        padding: 4px 8px;
+      }
+
+      .log-ip {
+        font-size: 12px;
+        color: var(--ion-color-medium);
+        font-family: monospace;
+      }
+    }
+
+    .log-details {
+      margin-bottom: 8px;
+
+      p {
+        margin: 0 0 4px 0;
+        font-size: 13px;
+        color: var(--ion-color-dark);
+      }
+
+      small {
+        color: var(--ion-color-medium);
+        font-size: 11px;
+      }
+    }
+
+    .log-2fa {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      color: var(--ion-color-success);
+      margin-top: 4px;
+
+      ion-icon {
+        width: 16px;
+        height: 16px;
+      }
+    }
+  }
+}
+
+.no-data {
+  text-align: center;
+  padding: 40px 16px;
+  
+  p {
+    margin: 0;
+  }
+}
+
+ion-spinner {
+  margin-left: 8px;
+  vertical-align: middle;
+}

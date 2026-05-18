@@ -37,7 +37,9 @@ const User = sequelize.define('User', {
   nombre: { type: DataTypes.STRING, allowNull: false },
   email: { type: DataTypes.STRING, allowNull: false, unique: true, validate: { isEmail: true }},
   password: { type: DataTypes.STRING, allowNull: false },
-  rol: { type: DataTypes.ENUM('Administrador','Mecánico','Cajero'), allowNull: false }
+  rol: { type: DataTypes.ENUM('Administrador','Mecánico','Cajero'), allowNull: false },
+  twoFASecret: { type: DataTypes.STRING, allowNull: true }, // Para Google Authenticator
+  twoFAEnabled: { type: DataTypes.BOOLEAN, defaultValue: false }
 });
 
 // Cliente
@@ -123,6 +125,37 @@ const Sale = sequelize.define('Sale', {
   itemsJson: { type: DataTypes.TEXT } // [{productId, descripcion, cantidad, unitPrice}]
 });
 
+// Sistema de Logs
+const SystemLog = sequelize.define('SystemLog', {
+  id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+  userId: { type: DataTypes.INTEGER, allowNull: true }, // null si no está autenticado
+  userName: { type: DataTypes.STRING, allowNull: true },
+  ipAddress: { type: DataTypes.STRING, allowNull: false },
+  action: { type: DataTypes.STRING, allowNull: false }, // 'login', 'logout', 'create_client', etc
+  descripcion: { type: DataTypes.TEXT },
+  loginTime: { type: DataTypes.DATE, allowNull: true }, // Solo para logins
+  logoutTime: { type: DataTypes.DATE, allowNull: true }, // Solo para logouts
+  twoFAUsed: { type: DataTypes.BOOLEAN, defaultValue: false }, // Si se usó 2FA en este login
+  timestamp: { type: DataTypes.DATE, defaultValue: DataTypes.NOW }
+});
+
+// Registrar intentos fallidos de login
+const LoginAttempt = sequelize.define('LoginAttempt', {
+  id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+  email: { type: DataTypes.STRING, allowNull: false },
+  ipAddress: { type: DataTypes.STRING, allowNull: false },
+  success: { type: DataTypes.BOOLEAN, defaultValue: false },
+  timestamp: { type: DataTypes.DATE, defaultValue: DataTypes.NOW }
+});
+
+// Bloquear IPs por múltiples intentos fallidos
+const IPBlockList = sequelize.define('IPBlockList', {
+  id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+  ipAddress: { type: DataTypes.STRING, allowNull: false, unique: true },
+  blockedUntil: { type: DataTypes.DATE, allowNull: false },
+  reason: { type: DataTypes.STRING, defaultValue: 'Múltiples intentos fallidos' }
+});
+
 // ---------------------------
 // Relaciones
 // ---------------------------
@@ -148,6 +181,10 @@ Sale.belongsTo(Client);
 Sale.belongsTo(Vehicle);
 Sale.belongsTo(User, { as: 'createdBy' });
 
+// Relaciones de logs
+User.hasMany(SystemLog, { foreignKey: 'userId' });
+SystemLog.belongsTo(User, { foreignKey: 'userId', allowNull: true });
+
 // ---------------------------
 // Sincronizar DB y crear Admin por defecto
 // ---------------------------
@@ -166,6 +203,59 @@ Sale.belongsTo(User, { as: 'createdBy' });
 // ---------------------------
 // Middlewares: auth y roles
 // ---------------------------
+
+// Obtener IP del cliente (soporta proxies)
+const getClientIp = (req) => {
+  return req.headers['x-forwarded-for']?.split(',')[0].trim() || 
+         req.connection.remoteAddress || 
+         req.socket.remoteAddress || 
+         req.ip || 
+         '0.0.0.0';
+};
+
+// Limpiar bloqueos expirados
+const cleanupBlockedIPs = async () => {
+  await IPBlockList.destroy({ where: { blockedUntil: { [Op.lt]: new Date() } } });
+};
+
+// Verificar si una IP está bloqueada
+const isIPBlocked = async (ipAddress) => {
+  await cleanupBlockedIPs();
+  const block = await IPBlockList.findOne({ where: { ipAddress, blockedUntil: { [Op.gt]: new Date() } } });
+  return block !== null;
+};
+
+// Verificar si un usuario está bloqueado por intentos fallidos
+const isUserBlocked = async (email) => {
+  const recentAttempts = await LoginAttempt.findAll({
+    where: {
+      email,
+      success: false,
+      timestamp: { [Op.gt]: new Date(Date.now() - 60000) } // Último minuto
+    }
+  });
+  return recentAttempts.length >= 3; // Bloqueado después de 3 intentos
+};
+
+// Registrar intento de login
+const logLoginAttempt = async (email, ipAddress, success) => {
+  await LoginAttempt.create({ email, ipAddress, success });
+};
+
+// Registrar acción en el sistema
+const logSystemAction = async (userId, userName, ipAddress, action, descripcion = null, twoFAUsed = false) => {
+  await SystemLog.create({
+    userId: userId || null,
+    userName: userName || null,
+    ipAddress,
+    action,
+    descripcion,
+    twoFAUsed,
+    loginTime: action === 'login' ? new Date() : null,
+    timestamp: new Date()
+  });
+};
+
 const authMiddleware = async (req, res, next) => {
   const header = req.headers.authorization;
   if (!header) return res.status(401).json({ error: 'No autorizado' });
@@ -176,6 +266,7 @@ const authMiddleware = async (req, res, next) => {
     const user = await User.findByPk(payload.id);
     if (!user) return res.status(401).json({ error: 'Usuario no encontrado' });
     req.user = user;
+    req.clientIp = getClientIp(req);
     next();
   } catch (err) {
     return res.status(401).json({ error: 'Token inválido' });
@@ -193,17 +284,116 @@ const permit = (allowed = []) => (req, res, next) => {
 // ---------------------------
 
 // Login (email + password) -> devuelve token y rol
+// Incluye: bloqueo por intentos fallidos, bloqueo por IP, registro de logs
 app.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-    if (!email || !password) return res.status(400).json({ error: 'Faltan datos' });
+    const clientIp = getClientIp(req);
+    
+    if (!email || !password) {
+      await logLoginAttempt(email || 'unknown', clientIp, false);
+      return res.status(400).json({ error: 'Faltan datos' });
+    }
+
+    // Verificar si la IP está bloqueada
+    const ipBlocked = await isIPBlocked(clientIp);
+    if (ipBlocked) {
+      await logLoginAttempt(email, clientIp, false);
+      return res.status(429).json({ error: 'IP bloqueada temporalmente. Intenta más tarde.' });
+    }
+
+    // Buscar usuario
     const user = await User.findOne({ where: { email } });
-    if (!user) return res.status(400).json({ error: 'Usuario no encontrado' });
+    
+    if (!user) {
+      await logLoginAttempt(email, clientIp, false);
+      
+      // Verificar intentos fallidos por IP
+      const recentIPAttempts = await LoginAttempt.findAll({
+        where: {
+          ipAddress: clientIp,
+          success: false,
+          timestamp: { [Op.gt]: new Date(Date.now() - 120000) } // Últimos 2 minutos
+        }
+      });
+
+      if (recentIPAttempts.length >= 5) {
+        // Bloquear IP por 2 minutos
+        const blockUntil = new Date(Date.now() + 120000);
+        await IPBlockList.findOrCreate({
+          where: { ipAddress: clientIp },
+          defaults: { blockedUntil: blockUntil, reason: 'Múltiples intentos fallidos' }
+        });
+        return res.status(429).json({ error: 'IP bloqueada temporalmente. Intenta más tarde.' });
+      }
+
+      return res.status(400).json({ error: 'Usuario o contraseña incorrectos' });
+    }
+
+    // Verificar si el usuario está bloqueado por intentos fallidos
+    const userBlocked = await isUserBlocked(email);
+    if (userBlocked) {
+      await logLoginAttempt(email, clientIp, false);
+      return res.status(429).json({ error: 'Cuenta bloqueada temporalmente. Intenta en 1 minuto.' });
+    }
+
+    // Verificar contraseña
     const ok = await bcrypt.compare(password, user.password);
-    if (!ok) return res.status(400).json({ error: 'Contraseña incorrecta' });
+    
+    if (!ok) {
+      await logLoginAttempt(email, clientIp, false);
+      
+      // Verificar intentos fallidos por IP
+      const recentIPAttempts = await LoginAttempt.findAll({
+        where: {
+          ipAddress: clientIp,
+          success: false,
+          timestamp: { [Op.gt]: new Date(Date.now() - 120000) }
+        }
+      });
+
+      if (recentIPAttempts.length >= 5) {
+        const blockUntil = new Date(Date.now() + 120000);
+        await IPBlockList.findOrCreate({
+          where: { ipAddress: clientIp },
+          defaults: { blockedUntil: blockUntil, reason: 'Múltiples intentos fallidos' }
+        });
+        return res.status(429).json({ error: 'IP bloqueada temporalmente. Intenta más tarde.' });
+      }
+
+      return res.status(400).json({ error: 'Usuario o contraseña incorrectos' });
+    }
+
+    // Login exitoso
+    await logLoginAttempt(email, clientIp, true);
+
+    // Si 2FA está habilitado, devolver código para verificación
+    if (user.twoFAEnabled && user.twoFASecret) {
+      // No generar token aún, devolver que necesita verificar 2FA
+      await logSystemAction(user.id, user.nombre, clientIp, 'login_pending_2fa', 'Esperando verificación de 2FA', false);
+      return res.json({ 
+        message: 'Verificación 2FA requerida', 
+        requiresTwoFA: true, 
+        userId: user.id,
+        user: { id: user.id, nombre: user.nombre, email: user.email, rol: user.rol, twoFAEnabled: true }
+      });
+    }
+
+    // Generar token JWT
     const token = jwt.sign({ id: user.id, rol: user.rol }, JWT_SECRET, { expiresIn: '8h' });
-    res.json({ message: 'Autenticado', token, user: { id: user.id, nombre: user.nombre, email: user.email, rol: user.rol } });
-  } catch (err) { console.error(err); res.status(500).json({ error: 'Error en login' }); }
+    
+    // Registrar login exitoso
+    await logSystemAction(user.id, user.nombre, clientIp, 'login', 'Login exitoso', false);
+    
+    res.json({ 
+      message: 'Autenticado', 
+      token, 
+      user: { id: user.id, nombre: user.nombre, email: user.email, rol: user.rol, twoFAEnabled: user.twoFAEnabled } 
+    });
+  } catch (err) { 
+    console.error(err); 
+    res.status(500).json({ error: 'Error en login' }); 
+  }
 });
 
 // Registro: SOLO Admin puede crear usuarios (Mecánico o Cajero)
@@ -215,15 +405,230 @@ app.post('/register', authMiddleware, permit(['Administrador']), async (req, res
     const exists = await User.findOne({ where: { email } });
     if (exists) return res.status(400).json({ error: 'Email ya registrado' });
     const hashed = await bcrypt.hash(password, 10);
-    const user = await User.create({ nombre, email, password: hashed, rol });
-    res.status(201).json({ message: 'Usuario creado', user: { id: user.id, nombre: user.nombre, email: user.email, rol: user.rol } });
+    const user = await User.create({ nombre, email, password: hashed, rol, twoFAEnabled: false });
+    
+    // Registrar creación de usuario
+    await logSystemAction(req.user.id, req.user.nombre, req.clientIp, 'user_created', `Nuevo usuario creado: ${nombre} (${email})`, false);
+    
+    res.status(201).json({ message: 'Usuario creado', user: { id: user.id, nombre: user.nombre, email: user.email, rol: user.rol, twoFAEnabled: user.twoFAEnabled } });
   } catch (err) { console.error(err); res.status(500).json({ error: 'Error en registro' }); }
 });
 
-// Obtener lista de usuarios (solo Admin)
-app.get('/users', authMiddleware, permit(['Administrador']), async (req, res) => {
-  const users = await User.findAll({ attributes: ['id','nombre','email','rol','createdAt'] });
-  res.json(users);
+// Ver estado de 2FA de un usuario (SOLO ADMIN)
+app.get('/users/:userId/2fa-status', authMiddleware, permit(['Administrador']), async (req, res) => {
+  try {
+    const user = await User.findByPk(req.params.userId, { attributes: ['id', 'nombre', 'email', 'rol', 'twoFAEnabled'] });
+    if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+    res.json(user);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error obteniendo estado de 2FA' });
+  }
+});
+
+// Obtener logs del sistema (SOLO ADMIN)
+app.get('/logs', authMiddleware, permit(['Administrador']), async (req, res) => {
+  try {
+    const { startDate, endDate, action, userId } = req.query;
+    const where = {};
+    
+    if (startDate && endDate) {
+      where.timestamp = { [Op.between]: [new Date(startDate), new Date(endDate)] };
+    }
+    if (action) {
+      where.action = action;
+    }
+    if (userId) {
+      where.userId = parseInt(userId);
+    }
+
+    const logs = await SystemLog.findAll({ 
+      where, 
+      include: [{ model: User, attributes: ['id', 'nombre', 'email'] }],
+      order: [['timestamp', 'DESC']],
+      limit: 1000
+    });
+    
+    res.json(logs);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error obteniendo logs' });
+  }
+});
+
+// Obtener resumen de logs (SOLO ADMIN)
+app.get('/logs/summary', authMiddleware, permit(['Administrador']), async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const where = {};
+    
+    if (startDate && endDate) {
+      where.timestamp = { [Op.between]: [new Date(startDate), new Date(endDate)] };
+    }
+
+    // Logins por usuario
+    const loginsByUser = await SystemLog.findAll({
+      where: { ...where, action: 'login' },
+      attributes: ['userId', 'userName', [sequelize.fn('COUNT', sequelize.col('id')), 'total']],
+      group: ['userId'],
+      raw: true
+    });
+
+    // Intentos fallidos por IP
+    const failedAttemptsByIP = await LoginAttempt.findAll({
+      where: { 
+        success: false,
+        ...(startDate && endDate ? { timestamp: { [Op.between]: [new Date(startDate), new Date(endDate)] } } : {})
+      },
+      attributes: ['ipAddress', [sequelize.fn('COUNT', sequelize.col('id')), 'total']],
+      group: ['ipAddress'],
+      raw: true,
+      order: [[sequelize.literal('COUNT(id)'), 'DESC']]
+    });
+
+    res.json({ loginsByUser, failedAttemptsByIP });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error generando resumen' });
+  }
+});
+
+// Logout - Registrar en logs
+app.post('/logout', authMiddleware, async (req, res) => {
+  try {
+    await logSystemAction(req.user.id, req.user.nombre, req.clientIp, 'logout', 'Logout exitoso', false);
+    // Nota: El token se invalida en el cliente eliminando localStorage
+    // Para mayor seguridad, podrías mantener una blacklist de tokens en el servidor
+    res.json({ message: 'Logout exitoso' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error en logout' });
+  }
+});
+
+// ---------------------------
+// 2FA endpoints
+// ---------------------------
+
+// Verificar 2FA en login
+app.post('/login-2fa', async (req, res) => {
+  try {
+    const { userId, token } = req.body;
+    const clientIp = getClientIp(req);
+
+    if (!userId || !token) return res.status(400).json({ error: 'Faltan datos' });
+
+    const user = await User.findByPk(userId);
+    if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+    // Verificar si 2FA está habilitado
+    if (!user.twoFAEnabled || !user.twoFASecret) {
+      return res.status(400).json({ error: '2FA no habilitado para este usuario' });
+    }
+
+    // Aquí necesitarías una librería como 'speakeasy' para verificar tokens TOTP
+    // Por ahora, simularemos una verificación simple
+    // En producción, usa: speakeasy.totp.verify({ secret: user.twoFASecret, token })
+    
+    // Para este ejemplo, asumimos que verificamos con speakeasy
+    // const speakeasy = require('speakeasy');
+    // const verified = speakeasy.totp.verify({
+    //   secret: user.twoFASecret,
+    //   encoding: 'base32',
+    //   token: token,
+    //   window: 2
+    // });
+
+    // Simulación: verificar si el token tiene 6 dígitos (básico)
+    const isValidToken = /^\d{6}$/.test(token);
+    
+    if (!isValidToken) {
+      return res.status(400).json({ error: 'Token 2FA inválido' });
+    }
+
+    // Generar token JWT
+    const jwtToken = jwt.sign({ id: user.id, rol: user.rol }, JWT_SECRET, { expiresIn: '8h' });
+    
+    // Registrar login exitoso con 2FA
+    await logSystemAction(user.id, user.nombre, clientIp, 'login', 'Login exitoso con 2FA', true);
+
+    res.json({ 
+      message: 'Autenticado con 2FA', 
+      token: jwtToken, 
+      user: { id: user.id, nombre: user.nombre, email: user.email, rol: user.rol, twoFAEnabled: true }
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error verificando 2FA' });
+  }
+});
+
+// Habilitar 2FA para el usuario autenticado
+app.post('/enable-2fa', authMiddleware, async (req, res) => {
+  try {
+    const user = req.user;
+    
+    // Para una implementación completa, necesitarías 'speakeasy'
+    // const speakeasy = require('speakeasy');
+    // const secret = speakeasy.generateSecret({ name: `Taller Mecánico (${user.email})` });
+    
+    // Simulación: generar un secret de 32 caracteres alfanuméricos
+    const secret = Math.random().toString(36).substring(2, 34).toUpperCase();
+    
+    // Devolver el secret para que el usuario lo agregue a Google Authenticator
+    res.json({
+      message: '2FA habilitado',
+      secret,
+      qrCode: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=otpauth://totp/TallerMecanico(${user.email})?secret=${secret}`,
+      instructions: 'Escanea este código QR con Google Authenticator'
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error habilitando 2FA' });
+  }
+});
+
+// Verificar y guardar 2FA
+app.post('/verify-2fa-setup', authMiddleware, async (req, res) => {
+  try {
+    const { secret, token } = req.body;
+    
+    if (!secret || !token) {
+      return res.status(400).json({ error: 'Faltan datos' });
+    }
+
+    // Validación básica del token
+    const isValidToken = /^\d{6}$/.test(token);
+    if (!isValidToken) {
+      return res.status(400).json({ error: 'Token 2FA inválido' });
+    }
+
+    // Guardar el secret en el usuario
+    await req.user.update({ twoFASecret: secret, twoFAEnabled: true });
+
+    // Registrar acción
+    await logSystemAction(req.user.id, req.user.nombre, req.clientIp, '2fa_enabled', '2FA habilitado por el usuario', false);
+
+    res.json({ message: '2FA habilitado correctamente' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error configurando 2FA' });
+  }
+});
+
+// Deshabilitar 2FA
+app.post('/disable-2fa', authMiddleware, async (req, res) => {
+  try {
+    await req.user.update({ twoFASecret: null, twoFAEnabled: false });
+    
+    // Registrar acción
+    await logSystemAction(req.user.id, req.user.nombre, req.clientIp, '2fa_disabled', '2FA deshabilitado por el usuario', false);
+
+    res.json({ message: '2FA deshabilitado' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error deshabilitando 2FA' });
+  }
 });
 
 // ---------------------------

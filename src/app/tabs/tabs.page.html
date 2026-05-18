@@ -42,6 +42,12 @@
       <ion-label>Reportes</ion-label>
     </ion-tab-button>
 
+    <!-- Logs del Sistema - Solo Administrador -->
+    <ion-tab-button tab="admin-logs" *ngIf="canAccessTab(['Administrador'])">
+      <ion-icon name="reader-outline"></ion-icon>
+      <ion-label>Logs</ion-label>
+    </ion-tab-button>
+
     <!-- Configuración - Todos -->
     <ion-tab-button tab="settings">
       <ion-icon name="settings-outline"></ion-icon>

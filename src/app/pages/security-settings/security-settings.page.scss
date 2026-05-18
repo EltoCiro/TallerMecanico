@@ -1,0 +1,153 @@
+.security-card {
+  margin: 16px;
+
+  .status-section {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+
+    .status-info {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px;
+      background: var(--ion-color-light);
+      border-radius: 8px;
+
+      ion-icon {
+        font-size: 48px;
+        flex-shrink: 0;
+      }
+
+      .status-text {
+        flex: 1;
+
+        h3 {
+          margin: 0 0 8px 0;
+          font-size: 16px;
+          font-weight: 600;
+
+          strong {
+            text-transform: uppercase;
+            font-size: 14px;
+          }
+        }
+
+        p {
+          margin: 0;
+          font-size: 14px;
+          color: var(--ion-color-medium);
+        }
+      }
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 8px;
+
+      ion-button {
+        flex: 1;
+      }
+    }
+  }
+
+  .qr-setup {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 2px solid var(--ion-color-light);
+
+    ion-card {
+      margin: 0 0 16px 0;
+
+      ion-card-header {
+        padding-bottom: 12px;
+      }
+
+      ion-card-content {
+        padding-top: 0;
+      }
+    }
+
+    .qr-container {
+      display: flex;
+      justify-content: center;
+      margin: 16px 0;
+
+      .qr-image {
+        max-width: 250px;
+        border: 2px solid var(--ion-color-light);
+        border-radius: 8px;
+      }
+    }
+
+    .qr-instructions {
+      font-size: 14px;
+      text-align: center;
+      color: var(--ion-color-medium);
+      margin: 16px 0;
+    }
+
+    .manual-entry {
+      font-size: 12px;
+      background: var(--ion-color-light);
+      padding: 12px;
+      border-radius: 6px;
+      margin: 12px 0 0 0;
+
+      code {
+        font-family: monospace;
+        font-weight: 600;
+        color: var(--ion-color-primary);
+        word-break: break-all;
+      }
+    }
+
+    ion-item {
+      --padding-start: 0;
+      --padding-end: 0;
+      --border-color: transparent;
+    }
+
+    .verification-buttons {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+
+      ion-button {
+        flex: 1;
+      }
+    }
+  }
+}
+
+.info-card {
+  margin: 16px;
+
+  p {
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--ion-color-medium);
+  }
+
+  h4 {
+    margin: 16px 0 8px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ion-color-dark);
+  }
+
+  ul {
+    margin: 0 0 16px 16px;
+    padding: 0;
+    font-size: 14px;
+
+    li {
+      margin: 4px 0;
+      color: var(--ion-color-medium);
+    }
+  }
+
+  &:last-child {
+    margin-bottom: 32px;
+  }
+}

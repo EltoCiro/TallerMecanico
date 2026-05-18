@@ -1,0 +1,118 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Logs del Sistema</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-card class="filters-card">
+    <ion-card-header>
+      <ion-card-title>Filtros</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-item>
+        <ion-label>Acción</ion-label>
+        <ion-select [(ngModel)]="filterAction" (ionChange)="onFilterChange()">
+          <ion-select-option *ngFor="let opt of actionOptions" [value]="opt.value">
+            {{ opt.label }}
+          </ion-select-option>
+        </ion-select>
+      </ion-item>
+
+      <ion-item>
+        <ion-label>Desde</ion-label>
+        <ion-input 
+          type="datetime-local" 
+          [(ngModel)]="startDate"
+          (ionChange)="onFilterChange()">
+        </ion-input>
+      </ion-item>
+
+      <ion-item>
+        <ion-label>Hasta</ion-label>
+        <ion-input 
+          type="datetime-local" 
+          [(ngModel)]="endDate"
+          (ionChange)="onFilterChange()">
+        </ion-input>
+      </ion-item>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Resumen -->
+  <ion-card *ngIf="summary" class="summary-card">
+    <ion-card-header>
+      <ion-card-title>Resumen</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <div class="summary-grid">
+        <div *ngIf="summary.loginsByUser?.length" class="summary-section">
+          <h3>Logins por Usuario</h3>
+          <ion-list>
+            <ion-item *ngFor="let user of summary.loginsByUser">
+              <ion-label>
+                <strong>{{ user.userName || `Usuario ${user.userId}` }}</strong>
+                <p>{{ user.total }} login(s)</p>
+              </ion-label>
+            </ion-item>
+          </ion-list>
+        </div>
+
+        <div *ngIf="summary.failedAttemptsByIP?.length" class="summary-section">
+          <h3>Intentos Fallidos por IP</h3>
+          <ion-list>
+            <ion-item *ngFor="let ip of summary.failedAttemptsByIP">
+              <ion-label>
+                <strong>{{ ip.ipAddress }}</strong>
+                <p>{{ ip.total }} intento(s)</p>
+              </ion-label>
+            </ion-item>
+          </ion-list>
+        </div>
+      </div>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Logs -->
+  <ion-card class="logs-card">
+    <ion-card-header>
+      <ion-card-title>
+        Logs ({{ logs.length }})
+        <ion-spinner *ngIf="loading" name="crescent"></ion-spinner>
+      </ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-list *ngIf="logs.length > 0; else noLogs">
+        <ion-item *ngFor="let log of logs">
+          <ion-label>
+            <div class="log-entry">
+              <div class="log-header">
+                <span class="log-user">{{ log.userName || 'Sistema' }}</span>
+                <ion-badge [color]="getActionBadgeColor(log.action)">
+                  {{ getActionLabel(log.action) }}
+                </ion-badge>
+                <span class="log-ip">{{ log.ipAddress }}</span>
+              </div>
+              <div class="log-details">
+                <p *ngIf="log.descripcion">{{ log.descripcion }}</p>
+                <small>{{ log.timestamp | date:'medium' }}</small>
+              </div>
+              <div *ngIf="log.twoFAUsed" class="log-2fa">
+                <ion-icon name="shield-checkmark" color="success"></ion-icon>
+                2FA Utilizado
+              </div>
+            </div>
+          </ion-label>
+        </ion-item>
+      </ion-list>
+      <ng-template #noLogs>
+        <ion-text color="medium" class="no-data">
+          <p>No hay logs que mostrar</p>
+        </ion-text>
+      </ng-template>
+    </ion-card-content>
+  </ion-card>
+</ion-content>

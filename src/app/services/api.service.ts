@@ -38,38 +38,80 @@ export class ApiService {
 
   // ==================== AUTH ====================
   login(email: string, password: string): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/auth/login`, { email, password }, {
+    return this.http.post<any>(`${this.apiUrl}/login`, { email, password }, {
       headers: new HttpHeaders({ 'Content-Type': 'application/json' })
     });
   }
 
+  logout(): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/logout`, {}, {
+      headers: this.getHeaders()
+    });
+  }
+
   register(user: { nombre: string; email: string; password: string; rol?: string }): Observable<any> {
-    return this.http.post(`${this.apiUrl}/usuarios`, user, {
+    return this.http.post(`${this.apiUrl}/register`, user, {
       headers: this.getHeaders()
     });
   }
 
-  // ==================== 2FA CON GOOGLE AUTHENTICATOR ====================
-  setup2FA(): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/auth/setup-2fa`, {}, {
+  // ==================== 2FA ====================
+  enable2FA(): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/enable-2fa`, {}, {
       headers: this.getHeaders()
     });
   }
 
-  verify2FA(secret: string, token: string): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/auth/verify-2fa`, { secret, token }, {
+  verify2FASetup(secret: string, token: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/verify-2fa-setup`, { secret, token }, {
       headers: this.getHeaders()
     });
   }
 
   login2FA(userId: number, token: string): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/auth/login-2fa`, { userId, token }, {
+    return this.http.post<any>(`${this.apiUrl}/login-2fa`, { userId, token }, {
       headers: new HttpHeaders({ 'Content-Type': 'application/json' })
     });
   }
 
   disable2FA(): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/auth/disable-2fa`, {}, {
+    return this.http.post<any>(`${this.apiUrl}/disable-2fa`, {}, {
+      headers: this.getHeaders()
+    });
+  }
+
+  get2FAStatus(userId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/users/${userId}/2fa-status`, {
+      headers: this.getHeaders()
+    });
+  }
+
+  // ==================== LOGS (ADMIN ONLY) ====================
+  getSystemLogs(params?: any): Observable<any[]> {
+    let queryParams = '';
+    if (params) {
+      const keys = Object.keys(params);
+      queryParams = keys.map(key => `${key}=${params[key]}`).join('&');
+    }
+    return this.http.get<any[]>(`${this.apiUrl}/logs${queryParams ? '?' + queryParams : ''}`, {
+      headers: this.getHeaders()
+    });
+  }
+
+  getLogsSummary(params?: any): Observable<any> {
+    let queryParams = '';
+    if (params) {
+      const keys = Object.keys(params);
+      queryParams = keys.map(key => `${key}=${params[key]}`).join('&');
+    }
+    return this.http.get<any>(`${this.apiUrl}/logs/summary${queryParams ? '?' + queryParams : ''}`, {
+      headers: this.getHeaders()
+    });
+  }
+
+  // ==================== USERS ====================
+  getUsers(): Observable<User[]> {
+    return this.http.get<User[]>(`${this.apiUrl}/users`, {
       headers: this.getHeaders()
     });
   }

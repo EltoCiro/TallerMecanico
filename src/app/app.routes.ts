@@ -57,6 +57,14 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/settings/settings.page').then((m) => m.SettingsPage),
       },
       {
+        path: 'security-settings',
+        loadComponent: () => import('./pages/security-settings/security-settings.page').then((m) => m.SecuritySettingsPage),
+      },
+      {
+        path: 'admin-logs',
+        loadComponent: () => import('./pages/admin-logs/admin-logs.page').then((m) => m.AdminLogsPage),
+      },
+      {
         path: '',
         redirectTo: 'home',
         pathMatch: 'full',

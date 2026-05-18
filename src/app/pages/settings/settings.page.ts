@@ -61,12 +61,12 @@ export class SettingsPage implements OnInit {
   // Iniciar configuración de 2FA
   async start2FASetup() {
     this.loading = true;
-    this.apiService.setup2FA().subscribe({
+    this.apiService.enable2FA().subscribe({
       next: async (response) => {
         console.log('2FA setup:', response);
         this.loading = false;
         this.qrCodeImageUrl = response.qrCode;
-        this.manualEntry = response.manualEntry;
+        this.manualEntry = response.secret;
         this.show2FASetup = true;
         await this.showToast('Escanea el código QR con Google Authenticator', 'info');
       },
@@ -91,7 +91,7 @@ export class SettingsPage implements OnInit {
     }
 
     this.loading = true;
-    this.apiService.verify2FA(this.manualEntry, this.setupTokenCode).subscribe({
+    this.apiService.verify2FASetup(this.manualEntry, this.setupTokenCode).subscribe({
       next: async (response) => {
         console.log('2FA verified:', response);
         this.loading = false;
@@ -156,9 +156,23 @@ export class SettingsPage implements OnInit {
         { text: 'Cancelar', role: 'cancel' },
         {
           text: 'Salir',
-          handler: () => {
-            this.authService.logout();
-            this.router.navigate(['/login']);
+          handler: async () => {
+            this.loading = true;
+            // Llamar al backend para registrar el logout
+            this.apiService.logout().subscribe({
+              next: async () => {
+                this.loading = false;
+                this.authService.logout();
+                await this.router.navigate(['/login']);
+              },
+              error: async (err) => {
+                console.error('Error en logout:', err);
+                // Hacer logout local aunque el backend falle
+                this.loading = false;
+                this.authService.logout();
+                await this.router.navigate(['/login']);
+              }
+            });
           }
         }
       ]

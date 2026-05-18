@@ -1,0 +1,145 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/settings"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Configuración de Seguridad</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <!-- Estado 2FA -->
+  <ion-card class="security-card">
+    <ion-card-header>
+      <ion-card-title>Autenticación de Dos Factores (2FA)</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <div class="status-section">
+        <div class="status-info">
+          <ion-icon 
+            [name]="twoFAEnabled ? 'shield-checkmark' : 'shield-close'"
+            [color]="twoFAEnabled ? 'success' : 'medium'">
+          </ion-icon>
+          <div class="status-text">
+            <h3>Estado: <strong [color]="twoFAEnabled ? 'success' : 'medium'">
+              {{ twoFAEnabled ? 'HABILITADO' : 'DESHABILITADO' }}
+            </strong></h3>
+            <p>
+              {{ twoFAEnabled 
+                ? 'Tu cuenta está protegida con 2FA' 
+                : 'Habilita 2FA para mayor seguridad' }}
+            </p>
+          </div>
+        </div>
+
+        <div class="action-buttons">
+          <ion-button 
+            *ngIf="!twoFAEnabled"
+            expand="block" 
+            color="primary"
+            (click)="enableTwoFA()"
+            [disabled]="loading">
+            <ion-icon name="add-circle" slot="start"></ion-icon>
+            Habilitar 2FA
+          </ion-button>
+          <ion-button 
+            *ngIf="twoFAEnabled"
+            expand="block" 
+            color="danger"
+            (click)="disableTwoFA()"
+            [disabled]="loading">
+            <ion-icon name="close-circle" slot="start"></ion-icon>
+            Deshabilitar 2FA
+          </ion-button>
+        </div>
+      </div>
+
+      <!-- QR Setup -->
+      <div *ngIf="showQR" class="qr-setup">
+        <ion-card>
+          <ion-card-header>
+            <ion-card-subtitle>Paso 1: Escanea el código QR</ion-card-subtitle>
+          </ion-card-header>
+          <ion-card-content>
+            <div class="qr-container">
+              <img 
+                *ngIf="qrCode" 
+                [src]="qrCode" 
+                alt="QR Code"
+                class="qr-image">
+            </div>
+            <p class="qr-instructions">
+              Abre Google Authenticator o Authy en tu dispositivo móvil y escanea este código QR.
+            </p>
+            <p *ngIf="secret" class="manual-entry">
+              <strong>O ingresa manualmente:</strong> <code>{{ secret }}</code>
+            </p>
+          </ion-card-content>
+        </ion-card>
+
+        <ion-card>
+          <ion-card-header>
+            <ion-card-subtitle>Paso 2: Verifica el código</ion-card-subtitle>
+          </ion-card-header>
+          <ion-card-content>
+            <ion-item>
+              <ion-label position="floating">Código de verificación (6 dígitos)</ion-label>
+              <ion-input 
+                type="number" 
+                maxlength="6"
+                [(ngModel)]="verificationToken"
+                placeholder="000000">
+              </ion-input>
+            </ion-item>
+
+            <div class="verification-buttons">
+              <ion-button 
+                expand="block" 
+                color="primary"
+                (click)="verifyTwoFA()"
+                [disabled]="loading || verificationToken.length !== 6">
+                <ion-spinner *ngIf="loading" name="crescent" slot="start"></ion-spinner>
+                {{ loading ? 'Verificando...' : 'Verificar' }}
+              </ion-button>
+              <ion-button 
+                expand="block" 
+                color="medium"
+                (click)="cancelQRSetup()"
+                [disabled]="loading">
+                Cancelar
+              </ion-button>
+            </div>
+          </ion-card-content>
+        </ion-card>
+      </div>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Información de seguridad -->
+  <ion-card class="info-card">
+    <ion-card-header>
+      <ion-card-title>¿Qué es 2FA?</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <p>
+        La Autenticación de Dos Factores (2FA) añade una capa extra de seguridad a tu cuenta. 
+        Además de tu contraseña, necesitarás un código de verificación generado por una aplicación 
+        como Google Authenticator para iniciar sesión.
+      </p>
+      
+      <h4>Ventajas:</h4>
+      <ul>
+        <li>Mayor protección contra accesos no autorizados</li>
+        <li>Los códigos cambian cada 30 segundos</li>
+        <li>Funciona sin conexión a internet</li>
+      </ul>
+
+      <h4>Recomendaciones:</h4>
+      <ul>
+        <li>Guarda tu código de recuperación en un lugar seguro</li>
+        <li>Usa una aplicación de autenticación confiable</li>
+        <li>Nunca compartas tus códigos con nadie</li>
+      </ul>
+    </ion-card-content>
+  </ion-card>
+</ion-content>
