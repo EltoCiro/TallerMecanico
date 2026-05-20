@@ -80,9 +80,25 @@ export class SecuritySettingsPage implements OnInit {
   }
 
   ngOnInit() {
+    this.loadTwoFAStatus();
+  }
+
+  loadTwoFAStatus() {
     const user = this.authService.getUser();
-    if (user) {
-      this.twoFAEnabled = user.twoFAEnabled || false;
+    if (user && user.id) {
+      // Obtener el estado real del backend
+      this.apiService.get2FAStatus(user.id).subscribe({
+        next: (response) => {
+          this.twoFAEnabled = response.twoFAEnabled || false;
+          // Actualizar también en el servicio de autenticación
+          user.twoFAEnabled = this.twoFAEnabled;
+        },
+        error: (err) => {
+          console.error('Error obteniendo estado de 2FA:', err);
+          // Fallback: usar el estado local
+          this.twoFAEnabled = user.twoFAEnabled || false;
+        }
+      });
     }
   }
 
@@ -140,21 +156,15 @@ export class SecuritySettingsPage implements OnInit {
     this.loading = true;
     this.apiService.verify2FASetup(this.secret, this.verificationToken).subscribe({
       next: () => {
-        this.twoFAEnabled = true;
         this.showQR = false;
         this.secret = null;
         this.qrCode = null;
         this.verificationToken = '';
         this.loading = false;
 
-        // Actualizar estado del usuario
-        const user = this.authService.getUser();
-        if (user) {
-          user.twoFAEnabled = true;
-          this.authService.login({ token: this.authService.getToken(), user });
-        }
-
         this.presentToast('2FA habilitado correctamente', 'success');
+        // Recargar el estado desde el backend
+        this.loadTwoFAStatus();
       },
       error: (err) => {
         console.error('Error verificando 2FA:', err);
@@ -190,17 +200,10 @@ export class SecuritySettingsPage implements OnInit {
     this.loading = true;
     this.apiService.disable2FA().subscribe({
       next: () => {
-        this.twoFAEnabled = false;
         this.loading = false;
-
-        // Actualizar estado del usuario
-        const user = this.authService.getUser();
-        if (user) {
-          user.twoFAEnabled = false;
-          this.authService.login({ token: this.authService.getToken(), user });
-        }
-
         this.presentToast('2FA deshabilitado', 'success');
+        // Recargar el estado desde el backend
+        this.loadTwoFAStatus();
       },
       error: (err) => {
         console.error('Error deshabilitando 2FA:', err);
