@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
@@ -64,7 +64,7 @@ import {
     IonMenuButton
   ]
 })
-export class AdminLogsPage implements OnInit {
+export class AdminLogsPage implements OnInit, OnDestroy {
   logs: any[] = [];
   summary: any = null;
   loading = false;
@@ -72,12 +72,13 @@ export class AdminLogsPage implements OnInit {
   filterUserId = '';
   startDate = '';
   endDate = '';
+  private refreshIntervalId: number | null = null;
 
   actionOptions = [
     { label: 'Todos', value: '' },
     { label: 'Login', value: 'login' },
     { label: 'Logout', value: 'logout' },
-    { label: 'Login Fallido', value: 'login_failed' },
+    { label: 'Login Pendiente 2FA', value: 'login_pending_2fa' },
     { label: '2FA Habilitado', value: '2fa_enabled' },
     { label: '2FA Deshabilitado', value: '2fa_disabled' },
     { label: 'Usuario Creado', value: 'user_created' }
@@ -98,6 +99,17 @@ export class AdminLogsPage implements OnInit {
   ngOnInit() {
     this.loadLogs();
     this.loadSummary();
+    this.refreshIntervalId = window.setInterval(() => {
+      this.loadLogs();
+      this.loadSummary();
+    }, 30000);
+  }
+
+  ngOnDestroy() {
+    if (this.refreshIntervalId !== null) {
+      window.clearInterval(this.refreshIntervalId);
+      this.refreshIntervalId = null;
+    }
   }
 
   loadLogs() {
@@ -156,7 +168,6 @@ export class AdminLogsPage implements OnInit {
         return 'success';
       case 'logout':
         return 'secondary';
-      case 'login_failed':
       case 'login_pending_2fa':
         return 'warning';
       case '2fa_enabled':

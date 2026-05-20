@@ -305,7 +305,15 @@ export class HomePage implements OnInit {
   }
 
   logout() {
-    this.authService.logout();
-    this.router.navigate(['/login']);
+    this.apiService.logout().subscribe({
+      next: () => {
+        this.authService.logout();
+        this.router.navigate(['/login'], { replaceUrl: true });
+      },
+      error: () => {
+        this.authService.logout();
+        this.router.navigate(['/login'], { replaceUrl: true });
+      }
+    });
   }
 }

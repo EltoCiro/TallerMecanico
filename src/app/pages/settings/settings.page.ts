@@ -163,14 +163,14 @@ export class SettingsPage implements OnInit {
               next: async () => {
                 this.loading = false;
                 this.authService.logout();
-                await this.router.navigate(['/login']);
+                await this.router.navigate(['/login'], { replaceUrl: true });
               },
               error: async (err) => {
                 console.error('Error en logout:', err);
                 // Hacer logout local aunque el backend falle
                 this.loading = false;
                 this.authService.logout();
-                await this.router.navigate(['/login']);
+                await this.router.navigate(['/login'], { replaceUrl: true });
               }
             });
           }

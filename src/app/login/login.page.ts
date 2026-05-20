@@ -85,6 +85,20 @@ export class LoginPage implements OnInit {
     this.apiUrl = this.apiService.getApiUrl();
   }
 
+  ionViewWillEnter() {
+    this.email = '';
+    this.password = '';
+    this.loading = false;
+    this.showConfig = false;
+    this.requiresTwoFactor = false;
+    this.tempUserId = null;
+    this.twoFactorCode = '';
+    this.showSetup2FA = false;
+    this.qrCodeImageUrl = null;
+    this.manualEntry = null;
+    this.setupTokenCode = '';
+  }
+
   // Enviar código 2FA
   async submit2FA() {
     if (!this.twoFactorCode || this.twoFactorCode.length !== 6) {

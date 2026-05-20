@@ -379,6 +379,7 @@ app.post('/auth/verify-2fa', authMiddleware, async (req, res) => {
   try {
     const { secret, token } = req.body;
     const user = req.user;
+    const clientIp = req.clientIp || getClientIp(req);
     
     if (!secret || !token) {
       return res.status(400).json({ error: 'Secret y token requeridos' });
@@ -401,6 +402,8 @@ app.post('/auth/verify-2fa', authMiddleware, async (req, res) => {
       twoFactorSecret: secret,
       twoFactorEnabled: true
     });
+
+    await logSystemAction(user.id, user.nombre, clientIp, '2fa_enabled', '2FA habilitado', false);
     
     res.json({ 
       message: '2FA activado exitosamente',
@@ -416,6 +419,7 @@ app.post('/auth/verify-2fa', authMiddleware, async (req, res) => {
 app.post('/auth/login-2fa', async (req, res) => {
   try {
     const { userId, token } = req.body;
+    const clientIp = getClientIp(req);
     
     if (!userId || !token) {
       return res.status(400).json({ error: 'userId y token requeridos' });
@@ -442,6 +446,7 @@ app.post('/auth/login-2fa', async (req, res) => {
     
     // Generar token JWT
     const jwtToken = generateToken(user);
+    await logSystemAction(user.id, user.nombre, clientIp, 'login', 'Login exitoso con 2FA', true);
     res.json({ 
       token: jwtToken,
       user: { id: user.id, nombre: user.nombre, email: user.email, rol: user.rol },
@@ -457,11 +462,14 @@ app.post('/auth/login-2fa', async (req, res) => {
 app.post('/auth/disable-2fa', authMiddleware, async (req, res) => {
   try {
     const user = req.user;
+    const clientIp = req.clientIp || getClientIp(req);
     
     await user.update({
       twoFactorSecret: null,
       twoFactorEnabled: false
     });
+
+    await logSystemAction(user.id, user.nombre, clientIp, '2fa_disabled', '2FA deshabilitado', false);
     
     res.json({ message: '2FA desactivado' });
   } catch (err) {
