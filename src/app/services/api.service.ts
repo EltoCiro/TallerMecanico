@@ -38,7 +38,7 @@ export class ApiService {
 
   // ==================== AUTH ====================
   login(email: string, password: string): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/login`, { email, password }, {
+    return this.http.post<any>(`${this.apiUrl}/auth/login`, { email, password }, {
       headers: new HttpHeaders({ 'Content-Type': 'application/json' })
     });
   }
@@ -50,32 +50,32 @@ export class ApiService {
   }
 
   register(user: { nombre: string; email: string; password: string; rol?: string }): Observable<any> {
-    return this.http.post(`${this.apiUrl}/register`, user, {
+    return this.http.post(`${this.apiUrl}/usuarios`, user, {
       headers: this.getHeaders()
     });
   }
 
   // ==================== 2FA ====================
   enable2FA(): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/enable-2fa`, {}, {
+    return this.http.post<any>(`${this.apiUrl}/auth/setup-2fa`, {}, {
       headers: this.getHeaders()
     });
   }
 
   verify2FASetup(secret: string, token: string): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/verify-2fa-setup`, { secret, token }, {
+    return this.http.post<any>(`${this.apiUrl}/auth/verify-2fa`, { secret, token }, {
       headers: this.getHeaders()
     });
   }
 
   login2FA(userId: number, token: string): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/login-2fa`, { userId, token }, {
+    return this.http.post<any>(`${this.apiUrl}/auth/login-2fa`, { userId, token }, {
       headers: new HttpHeaders({ 'Content-Type': 'application/json' })
     });
   }
 
   disable2FA(): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/disable-2fa`, {}, {
+    return this.http.post<any>(`${this.apiUrl}/auth/disable-2fa`, {}, {
       headers: this.getHeaders()
     });
   }
@@ -111,7 +111,7 @@ export class ApiService {
 
   // ==================== USERS ====================
   getUsers(): Observable<User[]> {
-    return this.http.get<User[]>(`${this.apiUrl}/users`, {
+    return this.http.get<User[]>(`${this.apiUrl}/usuarios`, {
       headers: this.getHeaders()
     });
   }
