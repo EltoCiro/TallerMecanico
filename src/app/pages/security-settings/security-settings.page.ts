@@ -80,10 +80,46 @@ export class SecuritySettingsPage implements OnInit {
   }
 
   ngOnInit() {
+    this.loadTwoFAStatus();
+  }
+
+  ionViewWillEnter() {
+    this.loadTwoFAStatus();
+  }
+
+  private loadTwoFAStatus() {
     const user = this.authService.getUser();
     if (user) {
       this.twoFAEnabled = user.twoFAEnabled || false;
     }
+
+    this.apiService.getCurrent2FAStatus().subscribe({
+      next: (response) => {
+        this.twoFAEnabled = response.twoFAEnabled === true;
+        const currentUser = this.authService.getUser();
+        if (currentUser) {
+          currentUser.twoFAEnabled = this.twoFAEnabled;
+          this.authService.login({ token: this.authService.getToken(), user: currentUser });
+        }
+      },
+      error: (err) => {
+        console.error('Error cargando estado 2FA:', err);
+      }
+    });
+
+    this.apiService.getCurrent2FAStatus().subscribe({
+      next: (response) => {
+        this.twoFAEnabled = response.twoFAEnabled === true;
+        const currentUser = this.authService.getUser();
+        if (currentUser) {
+          currentUser.twoFAEnabled = this.twoFAEnabled;
+          this.authService.login({ token: this.authService.getToken(), user: currentUser });
+        }
+      },
+      error: (err) => {
+        console.error('Error cargando estado 2FA:', err);
+      }
+    });
   }
 
   async enableTwoFA() {
