@@ -449,12 +449,26 @@ app.post('/auth/login-2fa', async (req, res) => {
     await logSystemAction(user.id, user.nombre, clientIp, 'login', 'Login exitoso con 2FA', true);
     res.json({ 
       token: jwtToken,
-      user: { id: user.id, nombre: user.nombre, email: user.email, rol: user.rol },
+      user: { id: user.id, nombre: user.nombre, email: user.email, rol: user.rol, twoFAEnabled: true },
       message: 'Autenticación exitosa'
     });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Error en 2FA login' });
+  }
+});
+
+// Estado 2FA del usuario autenticado
+app.get('/auth/2fa-status', authMiddleware, async (req, res) => {
+  try {
+    const user = req.user;
+    res.json({
+      userId: user.id,
+      twoFAEnabled: user.twoFactorEnabled || false
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error obteniendo estado 2FA' });
   }
 });
 

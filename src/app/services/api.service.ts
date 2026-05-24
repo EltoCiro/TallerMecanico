@@ -80,6 +80,12 @@ export class ApiService {
     });
   }
 
+  getCurrent2FAStatus(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/auth/2fa-status`, {
+      headers: this.getHeaders()
+    });
+  }
+
   get2FAStatus(userId: number): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/users/${userId}/2fa-status`, {
       headers: this.getHeaders()

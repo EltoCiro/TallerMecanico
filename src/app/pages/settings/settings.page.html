@@ -41,6 +41,9 @@
         <ion-icon name="shield-checkmark-outline" slot="start"></ion-icon>
         Configurar Autenticación de Dos Factores
       </ion-button>
+      <ion-text color="medium">
+        <p><small>Estado 2FA: {{ twoFAEnabled ? 'Habilitado' : 'Deshabilitado' }}</small></p>
+      </ion-text>
     </ion-card-content>
   </ion-card>
 

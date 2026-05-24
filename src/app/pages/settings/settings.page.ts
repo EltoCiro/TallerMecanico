@@ -35,6 +35,7 @@ export class SettingsPage implements OnInit {
   qrCodeImageUrl: string | null = null;
   manualEntry: string | null = null;
   setupTokenCode = '';
+  twoFAEnabled = false;
 
   constructor(
     private apiService: ApiService,
@@ -49,6 +50,32 @@ export class SettingsPage implements OnInit {
   ngOnInit() {
     this.currentUser = this.authService.getCurrentUser();
     this.apiUrl = this.apiService.getApiUrl();
+    this.loadTwoFAStatus();
+  }
+
+  ionViewWillEnter() {
+    this.loadTwoFAStatus();
+  }
+
+  private loadTwoFAStatus() {
+    const user = this.authService.getCurrentUser();
+    if (user) {
+      this.twoFAEnabled = user.twoFAEnabled || false;
+    }
+
+    this.apiService.getCurrent2FAStatus().subscribe({
+      next: (response) => {
+        this.twoFAEnabled = response.twoFAEnabled === true;
+        const currentUser = this.authService.getCurrentUser();
+        if (currentUser) {
+          currentUser.twoFAEnabled = this.twoFAEnabled;
+          this.authService.login({ token: this.authService.getToken(), user: currentUser });
+        }
+      },
+      error: (error) => {
+        console.error('Error cargando estado 2FA:', error);
+      }
+    });
   }
 
   saveApiUrl() {
