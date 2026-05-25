@@ -155,7 +155,7 @@
 </ion-content>
 
 <!-- ==================== CLIENT FORM MODAL ==================== -->
-<ion-modal [isOpen]="isClientModalOpen" (didDismiss)="closeClientModal()">
+<ion-modal [isOpen]="isClientModalOpen" (didDismiss)="closeClientModal()" [breakpoints]="[0, 0.5, 1]" [initialBreakpoint]="1">
   <ng-template>
     <ion-header>
       <ion-toolbar color="primary">
@@ -226,7 +226,7 @@
 </ion-modal>
 
 <!-- ==================== VEHICLE FORM MODAL ==================== -->
-<ion-modal [isOpen]="isVehicleModalOpen" (didDismiss)="closeVehicleModal()">
+<ion-modal [isOpen]="isVehicleModalOpen" (didDismiss)="closeVehicleModal()" [breakpoints]="[0, 0.5, 1]" [initialBreakpoint]="1">
   <ng-template>
     <ion-header>
       <ion-toolbar color="primary">

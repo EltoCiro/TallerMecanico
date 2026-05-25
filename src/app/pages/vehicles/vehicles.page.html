@@ -191,7 +191,7 @@
   </ion-fab>
 
   <!-- Modal para crear/editar vehículo -->
-  <ion-modal [isOpen]="isModalOpen" (didDismiss)="closeModal()">
+  <ion-modal [isOpen]="isModalOpen" (didDismiss)="closeModal()" [breakpoints]="[0, 0.5, 1]" [initialBreakpoint]="1">
     <ng-template>
       <ion-header>
         <ion-toolbar color="primary">

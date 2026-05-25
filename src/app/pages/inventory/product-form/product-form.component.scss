@@ -20,13 +20,17 @@ ion-card {
   }
 }
 
-ion-item {
+ion-card-content ion-item {
   --padding-start: 0;
-  margin-bottom: 16px;
+  margin-bottom: 32px !important;
+  display: block !important;
+}
 
-  ion-label {
-    margin-bottom: 8px;
-  }
+ion-card-content ion-item ion-label {
+  margin-bottom: 16px !important;
+  display: block !important;
+  font-weight: 600 !important;
+  font-size: 0.95rem !important;
 }
 
 ion-note {

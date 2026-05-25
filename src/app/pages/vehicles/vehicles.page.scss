@@ -170,22 +170,30 @@ ion-list {
 
 // ==================== MODAL ====================
 ion-modal {
-  --height: auto;
-  --border-radius: 16px;
+  --width: 100%;
+  --max-width: 100%;
+  --height: 100%;
+  --border-radius: 16px 16px 0 0;
 
   ion-content {
     --background: white;
+    --ion-padding: 16px;
+    overflow-y: auto;
 
     form {
       ion-item {
         --padding-start: 0;
         --inner-padding-end: 0;
-        margin-bottom: 20px;
+        margin-bottom: 24px;
+        display: block;
 
         ion-label {
           font-weight: 600;
-          margin-bottom: 8px;
-          color: var(--ion-color-dark);
+          margin-bottom: 12px;
+          color: white !important;
+          display: block;
+          margin-left: 0;
+          font-size: 1.1rem;
         }
 
         &.ion-invalid {
@@ -201,6 +209,7 @@ ion-modal {
 
       .form-buttons {
         margin-top: 32px;
+        margin-bottom: 20px;
 
         ion-button {
           margin-bottom: 12px;

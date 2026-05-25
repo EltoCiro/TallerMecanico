@@ -1,14 +1,179 @@
-.vehicle-item {
-  padding: 16px 0;
-  border-bottom: 1px solid var(--ion-color-light);
-  margin-bottom: 16px;
+// ==================== GENERAL STYLES ====================
+ion-content {
+  --background: var(--ion-background-color, #f5f5f5);
+}
 
-  &:last-child {
-    border-bottom: none;
+// ==================== HEADER STYLES ====================
+ion-header {
+  ion-toolbar {
+    ion-title {
+      font-weight: 600;
+      font-size: 1.2rem;
+    }
+
+    ion-buttons {
+      ion-button {
+        ion-icon {
+          font-size: 1.5rem;
+        }
+      }
+    }
   }
 }
 
+// ==================== CARD STYLES ====================
+ion-card {
+  margin: 16px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: box-shadow 0.3s ease;
+  }
+
+  ion-card-header {
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--ion-color-light);
+
+    ion-card-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--ion-color-dark);
+      margin-bottom: 8px;
+
+      ion-icon {
+        margin-right: 8px;
+        font-size: 1.2rem;
+        color: var(--ion-color-primary);
+      }
+    }
+
+    ion-button {
+      margin-top: 12px;
+      text-transform: none;
+      font-weight: 500;
+    }
+  }
+
+  ion-card-content {
+    padding-top: 16px;
+  }
+}
+
+// ==================== FORM ITEM STYLES ====================
 ion-item {
   --padding-start: 0;
-  margin-bottom: 8px;
+  --inner-padding-end: 0;
+  --background: transparent;
+  margin-bottom: 24px;
+  display: block;
+
+  ion-label {
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--ion-color-dark);
+    font-size: 0.95rem;
+    display: block;
+  }
+
+  &.ion-invalid {
+    --border-color: var(--ion-color-danger);
+  }
+}
+
+// ==================== VEHICLE ITEM STYLES ====================
+.vehicle-item {
+  padding: 16px;
+  background: var(--ion-color-light);
+  border-radius: 8px;
+  margin-bottom: 16px;
+  border-left: 4px solid var(--ion-color-primary);
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  ion-text {
+    display: block;
+    margin-bottom: 12px;
+
+    h4 {
+      font-weight: 600;
+      color: var(--ion-color-dark);
+      margin: 0;
+      font-size: 0.95rem;
+    }
+  }
+
+  ion-item {
+    --background: white;
+    --padding-start: 8px;
+    border-radius: 6px;
+    margin-bottom: 12px;
+
+    ion-label {
+      margin-bottom: 6px;
+      font-size: 0.85rem;
+    }
+
+    ion-input {
+      font-size: 0.9rem;
+    }
+  }
+
+  ion-button {
+    margin-top: 12px;
+    text-transform: none;
+    font-weight: 500;
+  }
+}
+
+// ==================== EMPTY STATE ====================
+.ion-text-center {
+  text-align: center;
+  padding: 32px 16px;
+
+  ion-text {
+    display: block;
+
+    p {
+      color: var(--ion-color-medium);
+      font-size: 0.95rem;
+      margin: 0;
+    }
+  }
+}
+
+// ==================== BUTTON STYLES ====================
+ion-button {
+  text-transform: none;
+  font-weight: 600;
+  letter-spacing: 0;
+
+  &[expand="block"] {
+    margin-bottom: 12px;
+  }
+
+  &[color="danger"] {
+    &[fill="outline"] {
+      margin-top: 12px;
+    }
+  }
+}
+
+// ==================== VALIDATION STYLES ====================
+.error-message {
+  font-size: 0.85rem;
+  margin: -16px 0 16px 0;
+  padding-left: 4px;
+  color: var(--ion-color-danger);
+}
+
+// ==================== RESPONSIVE ====================
+@media (min-width: 768px) {
+  ion-card {
+    margin: 16px auto;
+    max-width: 600px;
+  }
 }

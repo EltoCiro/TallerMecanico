@@ -25,20 +25,24 @@ ion-card {
 }
 
 // Items del formulario
-ion-item {
+ion-card-content ion-item {
   --padding-start: 0;
-  margin-bottom: 16px;
+  margin-bottom: 32px !important;
+  display: block !important;
+}
 
-  ion-label {
-    display: flex;
-    align-items: center;
-    gap: 6px;
+ion-card-content ion-item ion-label {
+  display: flex !important;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 16px !important;
+  font-weight: 600 !important;
+  font-size: 0.95rem !important;
+}
 
-    ion-icon {
-      font-size: 1.1rem;
-      color: var(--ion-color-primary);
-    }
-  }
+ion-card-content ion-item ion-label ion-icon {
+  font-size: 1.1rem;
+  color: var(--ion-color-primary);
 }
 
 ion-note {

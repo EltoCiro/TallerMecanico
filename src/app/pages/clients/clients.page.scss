@@ -120,18 +120,31 @@ ion-chip {
 
 // ==================== MODAL STYLES ====================
 ion-modal {
+  --width: 100%;
+  --max-width: 100%;
+  --height: 100%;
+  --border-radius: 16px 16px 0 0;
+
   ion-content {
     --background: var(--ion-background-color, #ffffff);
+    --ion-padding: 16px;
+    overflow-y: auto;
   }
 
   ion-item {
     --background: transparent;
-    margin: 12px 0;
-  }
+    --padding-start: 0;
+    --inner-padding-end: 0;
+    margin-bottom: 24px;
+    display: block;
 
-  ion-label {
-    margin-bottom: 8px;
-    font-weight: 600;
+    ion-label {
+      margin-bottom: 12px;
+      font-weight: 600;
+      display: block;
+      margin-left: 0;
+      font-size: 0.95rem;
+    }
   }
 
   ion-note {
@@ -149,13 +162,15 @@ form {
     --border-color: var(--ion-color-light);
     --border-width: 1px;
     border-radius: 8px;
-    margin-bottom: 16px;
-  }
+    margin-bottom: 24px;
+    display: block;
 
-  ion-input,
-  ion-textarea {
-    --padding-top: 12px;
-    --padding-bottom: 12px;
+    ion-label {
+      margin-bottom: 12px;
+      display: block;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
   }
 }
 
